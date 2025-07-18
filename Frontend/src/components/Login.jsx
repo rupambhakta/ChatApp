@@ -20,8 +20,8 @@ const Login = () => {
 
     const data = await responce.json();
     setAuthLoading(false);
-    if (data.token) {
-      localStorage.setItem("token", data.token);
+    if (data.NexTalktoken) {
+      localStorage.setItem("NexTalktoken", data.NexTalktoken);
       navigate("/Chat");
     } else {
       setAuthError(data.message || "Login Failed");
@@ -29,7 +29,7 @@ const Login = () => {
   };
 
   useEffect(() => {
-      if (localStorage.getItem('token')) {
+      if (localStorage.getItem('NexTalktoken')) {
         navigate("/chat");
       }
     }, [navigate]);

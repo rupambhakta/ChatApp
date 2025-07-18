@@ -5,13 +5,13 @@ const Chat = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!localStorage.getItem('token')) {
+    if (!localStorage.getItem('NexTalktoken')) {
       navigate("/login");
     }
   }, [navigate]);
 
   return (
-    <div>
+    <div className='bg-gray-900 h-screen text-white'>
       After Login
     </div>
   )
