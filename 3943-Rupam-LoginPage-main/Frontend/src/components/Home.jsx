@@ -6,7 +6,7 @@ const Home = () => {
     <div>
       <div>
         <h1 className="text-3xl text-center font-bold m-5 text-green-600 underline">
-          Your Personal Chap App
+          User Authentication
         </h1>
       </div>
 

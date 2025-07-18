@@ -4,6 +4,9 @@ import "./App.css";
 import Home from "./components/Home";
 import Signup from "./components/Signup";
 import Login from "./components/Login";
+import Chat from "./components/Chat";
+import Dashboard from "./components/Dashboard";
+import AdminLogin from "./components/AdminLogin";
 
 function App() {
   const router = createBrowserRouter([
@@ -19,6 +22,18 @@ function App() {
       path:"/login",
       element:<Login/>
     },
+    {
+      path: "/chat",
+      element: <Chat />
+    },
+    {
+      path:"/admin/dashboard",
+      element:<Dashboard/>
+    },
+    {
+      path:"/admin/login",
+      element:<AdminLogin/>
+    }
   ]);
 
   return <>
