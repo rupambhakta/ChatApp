@@ -105,6 +105,16 @@ app.post("/admin/dashboard", async (req, res) => {
   }
 });
 
+// Get all users
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);

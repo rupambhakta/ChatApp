@@ -1,15 +1,29 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import UserInfo from "./UserInfo";
+import axios from "axios";
 
 const Chat = () => {
   const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     if (!localStorage.getItem("NexTalktoken")) {
       navigate("/login");
+    } else {
+      fetchData();
     }
   }, [navigate]);
+
+  const fetchData = async () => {
+    try {
+      const responce = await axios.get("http://localhost:5080/users");
+      setUsers(responce.data);
+      console.log(users);
+    } catch (e) {
+      console.error("Error fetching users:", e);
+    }
+  };
 
   return (
     <div className="bg-gray-900 h-screen text-white flex">
@@ -29,17 +43,13 @@ const Chat = () => {
           />
         </nav>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
-          <UserInfo />
+          {users.map((user) => {
+            console.log(user);
+
+            return <UserInfo key={user._id} user={user} />;
+          })}
         </div>
       </div>
-
       {/* for chat portion */}
       <div
         id="chatPortion"
