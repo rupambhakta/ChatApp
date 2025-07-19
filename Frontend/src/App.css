@@ -1,1 +1,20 @@
 @import "tailwindcss";
+/* Add this CSS for the custom dark gray scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #2d2d2d #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  background: #1a1a1a;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #2d2d2d;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3a3a3a;
+}
