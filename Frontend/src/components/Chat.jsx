@@ -25,6 +25,14 @@ const Chat = () => {
     }
   };
 
+  const handleLogout = () => {
+    const confirmLogout = window.confirm("Are you sure you want to logout?");
+    if (confirmLogout) {
+      localStorage.removeItem("NexTalktoken");
+      navigate("/login");
+    }
+  };
+
   return (
     <div className="bg-gray-900 h-screen text-white flex">
       {/* For User Information */}
@@ -55,16 +63,30 @@ const Chat = () => {
         id="chatPortion"
         className="bg-gray-850 w-2/3 flex flex-col h-screen"
       >
-        <nav className="flex items-center h-[64px] border-b-2 border-black">
-          <div className="image p-2">
+        <nav className="flex items-center justify-between h-[64px] border-b-2 border-black">
+          <div className="image flex justify-center items-center gap-3 p-2">
             <img
               className="border-2 border-gray-600 rounded-full aspect-square object-cover"
               src="/profile.jpg"
               width={50}
               alt="Profile pic"
             />
+            <div className="username text-2xl font-bold">Rupam Bhakta</div>
           </div>
-          <div className="username text-2xl font-bold">Rupam Bhakta</div>
+          <div className="flex justify-center items-center gap-4">
+            <img
+              onClick={() => navigate("/chat/dashboard")}
+              className="cursor-pointer"
+              src="/account.png"
+              alt="account"
+            />
+            <img
+              onClick={handleLogout}
+              className="cursor-pointer"
+              src="/logout.png"
+              alt="logout"
+            />
+          </div>
         </nav>
         {/* Make chat area grow and scrollable */}
         <div className="chat bg-gray-800 flex-1 overflow-y-auto">

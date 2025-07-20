@@ -7,6 +7,7 @@ import Login from "./components/Login";
 import Chat from "./components/Chat";
 import Dashboard from "./components/Dashboard";
 import AdminLogin from "./components/AdminLogin";
+import UserDashboard from "./components/UserDashboard";
 
 function App() {
   const router = createBrowserRouter([
@@ -25,6 +26,10 @@ function App() {
     {
       path: "/chat",
       element: <Chat />
+    },
+    {
+      path:"/chat/dashboard",
+      element:<UserDashboard/>
     },
     {
       path:"/admin/dashboard",
