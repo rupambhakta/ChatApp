@@ -19,8 +19,10 @@ const Login = () => {
     });
 
     const data = await responce.json();
+    console.log(data);
+    
     setAuthLoading(false);
-    if (data.NexTalktoken) {
+    if (data.NexTalktoken ) {
       localStorage.setItem("NexTalktoken", data.NexTalktoken);
       navigate("/Chat");
     } else {

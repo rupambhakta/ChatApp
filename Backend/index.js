@@ -1,16 +1,56 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const multer = require("multer");
+const path = require("path");
 require("dotenv").config();
 const User = require("./models/SingUp");
 const app = express();
 const PORT = 5080;
+
+// Configure multer for handling file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'images/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  }
+});
 const MONGO = "mongodb://localhost:27017/contactdb";
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 app.use(express.json());
 app.use(cors());
+
+// JWT verification middleware
+const verifyToken = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ message: "No token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, "secret");
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Invalid token" });
+  }
+};
 
 mongoose.connect(MONGO, {
   useNewUrlParser: true,
@@ -108,6 +148,7 @@ app.post("/admin/dashboard", async (req, res) => {
 // Get all users
 app.get("/users", async (req, res) => {
   try {
+    //TODO: Condition fetching
     const users = await User.find({});
     res.json(users);
   } catch (err) {
@@ -115,6 +156,54 @@ app.get("/users", async (req, res) => {
   }
 });
 
+app.put("/user", verifyToken, upload.single('profileImage'), async(req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Create update object
+    const updateData = {};
+    
+    // If there's a file, add the path to updateData
+    if (req.file) {
+      updateData.profileImage = `/images/${req.file.filename}`;
+    }
+
+    // Add any other fields from req.body to updateData
+    if (req.body.userName) updateData.userName = req.body.userName;
+    if (req.body.emailId) updateData.emailId = req.body.emailId;
+    if (req.body.mobileNumber) updateData.mobileNumber = req.body.mobileNumber;
+
+    // Update user
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({
+      message: "User updated successfully",
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating user", error: error.message });
+  }
+});
+
+// Serve images statically
+app.use('/images', express.static('images'));
+
+// Protected route example that uses token verification
+app.get("/protected", verifyToken, (req, res) => {
+  res.json({ 
+    message: "This is a protected route",
+    user: req.user
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);

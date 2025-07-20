@@ -1,6 +1,6 @@
 import React from "react";
 
-const UserInfo = ({ user }) => {
+const UserInfo = ({ user , onSelect}) => {
   console.log(user);
   const date = new Date(user.createdAt);
   const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(
@@ -8,14 +8,15 @@ const UserInfo = ({ user }) => {
   )
     .toString()
     .padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`;
+  const profileImage = user.profileImage ? import.meta.env.VITE_API_URL+user.profileImage : undefined;
 
   return (
-    <div className="flex justify-between p-3 hover:bg-gray-800 m-2 rounded-2xl">
+    <div className="flex justify-between p-3 hover:bg-gray-800 m-2 rounded-2xl" onClick={onSelect}>
       <div className="flex justify-center items-center gap-2">
         <div className="">
           <img
             className="border-2 border-gray-600 rounded-full aspect-square object-cover"
-            src="/profile.jpg"
+            src={profileImage ?? "/user.png"}
             alt="profile photo"
             width={55}
           />

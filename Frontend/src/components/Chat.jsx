@@ -6,6 +6,7 @@ import axios from "axios";
 const Chat = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState();
 
   useEffect(() => {
     if (!localStorage.getItem("NexTalktoken")) {
@@ -33,6 +34,8 @@ const Chat = () => {
     }
   };
 
+
+
   return (
     <div className="bg-gray-900 h-screen text-white flex">
       {/* For User Information */}
@@ -54,7 +57,7 @@ const Chat = () => {
           {users.map((user) => {
             console.log(user);
 
-            return <UserInfo key={user._id} user={user} />;
+            return <UserInfo onSelect={()=>setSelectedUser(user)} key={user._id} user={user} />;
           })}
         </div>
       </div>
@@ -64,15 +67,19 @@ const Chat = () => {
         className="bg-gray-850 w-2/3 flex flex-col h-screen"
       >
         <nav className="flex items-center justify-between h-[64px] border-b-2 border-black">
-          <div className="image flex justify-center items-center gap-3 p-2">
-            <img
-              className="border-2 border-gray-600 rounded-full aspect-square object-cover"
-              src="/profile.jpg"
-              width={50}
-              alt="Profile pic"
-            />
-            <div className="username text-2xl font-bold">Rupam Bhakta</div>
-          </div>
+          {selectedUser ? (
+            <div className="image flex justify-center items-center gap-3 p-2">
+              <img
+                className="border-2 border-gray-600 rounded-full aspect-square object-cover"
+                src={selectedUser.profileImage ? `${import.meta.env.VITE_API_URL+selectedUser.profileImage}` : "/user.png"}
+                width={50}
+                alt="Profile pic"
+              />
+              <div className="username text-2xl font-bold">{selectedUser.userName}</div>
+            </div>
+          ) : (
+            <p>No User selected</p>
+          )}
           <div className="flex justify-center items-center gap-4">
             <img
               onClick={() => navigate("/chat/dashboard")}
