@@ -147,24 +147,43 @@ app.post("/admin/dashboard", async (req, res) => {
 
 // Get all users
 app.get("/users", async (req, res) => {
-  try {
-    //TODO: Condition fetching
-    const users = await User.find({});
-    res.json(users);
+   try {
+    const users = await User.find({}, 'userName createdAt profileImage');
+    const result = users.map(user => ({
+      userName: user.userName,
+      date: user.createdAt,
+      image: user.profileImage
+    }));
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
 
 app.put("/user", verifyToken, upload.single('profileImage'), async(req, res) => {
+  const fs = require('fs');
   try {
     const userId = req.user.userId;
-    
+    // Find the user first
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     // Create update object
     const updateData = {};
-    
-    // If there's a file, add the path to updateData
+
+    // If there's a file, delete the old image if it exists
     if (req.file) {
+      if (user.profileImage) {
+        const oldImagePath = user.profileImage.startsWith('/') ? user.profileImage.slice(1) : user.profileImage;
+        const fullPath = require('path').join(__dirname, oldImagePath);
+        fs.unlink(fullPath, (err) => {
+          if (err) {
+            console.error('Error deleting old image:', err.message);
+          }
+        });
+      }
       updateData.profileImage = `/images/${req.file.filename}`;
     }
 
@@ -179,10 +198,6 @@ app.put("/user", verifyToken, upload.single('profileImage'), async(req, res) => 
       updateData,
       { new: true, runValidators: true }
     );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
 
     res.json({
       message: "User updated successfully",

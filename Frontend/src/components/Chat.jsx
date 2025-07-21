@@ -20,7 +20,7 @@ const Chat = () => {
     try {
       const responce = await axios.get("http://localhost:5080/users");
       setUsers(responce.data);
-      console.log(users);
+      // console.log(users);
     } catch (e) {
       console.error("Error fetching users:", e);
     }
@@ -71,14 +71,14 @@ const Chat = () => {
             <div className="image flex justify-center items-center gap-3 p-2">
               <img
                 className="border-2 border-gray-600 rounded-full aspect-square object-cover"
-                src={selectedUser.profileImage ? `${import.meta.env.VITE_API_URL+selectedUser.profileImage}` : "/user.png"}
+                src={selectedUser.image ? `${import.meta.env.VITE_API_URL+selectedUser.image}` : "/user.png"}
                 width={50}
                 alt="Profile pic"
               />
               <div className="username text-2xl font-bold">{selectedUser.userName}</div>
             </div>
           ) : (
-            <p>No User selected</p>
+            <p className="text-2xl font-bold ml-2 text-gray-200">No User Selected</p>
           )}
           <div className="flex justify-center items-center gap-4">
             <img

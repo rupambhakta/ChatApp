@@ -2,13 +2,13 @@ import React from "react";
 
 const UserInfo = ({ user , onSelect}) => {
   console.log(user);
-  const date = new Date(user.createdAt);
+  const date = new Date(user.date);
   const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(
     date.getMonth() + 1
   )
     .toString()
     .padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`;
-  const profileImage = user.profileImage ? import.meta.env.VITE_API_URL+user.profileImage : undefined;
+  const profileImage = user.image ? import.meta.env.VITE_API_URL+user.image : undefined;
 
   return (
     <div className="flex justify-between p-3 hover:bg-gray-800 m-2 rounded-2xl" onClick={onSelect}>
