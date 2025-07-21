@@ -147,18 +147,30 @@ app.post("/admin/dashboard", async (req, res) => {
 
 // Get all users
 app.get("/users", async (req, res) => {
-   try {
-    const users = await User.find({}, 'userName createdAt profileImage');
+  try {
+    const searchTerm = req.query.search;
+
+    let query = {};
+    if (searchTerm) {
+      query = {
+        userName: { $regex: searchTerm, $options: "i" }  // Case-insensitive match
+      };
+    }
+
+    const users = await User.find(query, 'userName createdAt profileImage');
+
     const result = users.map(user => ({
       userName: user.userName,
       date: user.createdAt,
       image: user.profileImage
     }));
+
     res.json(result);
   } catch (err) {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
+
 
 app.put("/user", verifyToken, upload.single('profileImage'), async(req, res) => {
   const fs = require('fs');

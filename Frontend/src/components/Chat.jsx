@@ -7,24 +7,31 @@ const Chat = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
-
-  useEffect(() => {
-    if (!localStorage.getItem("NexTalktoken")) {
-      navigate("/login");
-    } else {
-      fetchData();
-    }
-  }, [navigate]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState([]);
 
   const fetchData = async () => {
     try {
       const responce = await axios.get("http://localhost:5080/users");
       setUsers(responce.data);
-      // console.log(users);
     } catch (e) {
       console.error("Error fetching users:", e);
     }
   };
+
+  const fetchSearchResults = async (term) => {
+  try {
+    const response = await axios.get(`http://localhost:5080/users?search=${term}`);
+    setFilteredUsers(response.data);
+  } catch (error) {
+    console.error("Error fetching search results:", error);
+  }
+};
+
+  // Filter users based on search term
+  // const filteredUsers = users.filter((user) =>
+  //   user.userName.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
 
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to logout?");
@@ -34,7 +41,38 @@ const Chat = () => {
     }
   };
 
+  useEffect(() => {
+    if (!localStorage.getItem("NexTalktoken")) {
+      navigate("/login");
+      // } else if (searchTerm) {
+      //   setUsers(filteredUsers);
+    } else {
+      fetchData();
+    }
+  }, [navigate]);
 
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (searchTerm.trim() === "") {
+        setFilteredUsers(users);
+      } else {
+        const filtered = users.filter((user) =>
+          user.userName.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredUsers(filtered);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(delayDebounce); // cleanup
+  }, [searchTerm, users]);
+
+  useEffect(() => {
+  if (searchTerm.trim() === "") {
+    setFilteredUsers(users);
+  } else {
+    fetchSearchResults(searchTerm);
+  }
+}, [searchTerm]);
 
   return (
     <div className="bg-gray-900 h-screen text-white flex">
@@ -48,17 +86,22 @@ const Chat = () => {
             NexTalk
           </h1>
           <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             type="search"
             placeholder=" Start a new chat"
             className="w-2/4 mr-2 p-1 rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200  shadow-sm "
           />
         </nav>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {users.map((user) => {
-            console.log(user);
-
-            return <UserInfo onSelect={()=>setSelectedUser(user)} key={user._id} user={user} />;
-          })}
+          {filteredUsers.map((user) => (
+            <UserInfo
+              onSelect={() => setSelectedUser(user)}
+              key={user._id}
+              user={user}
+              selected={selectedUser?.userName === user.userName}
+            />
+          ))}
         </div>
       </div>
       {/* for chat portion */}
@@ -71,14 +114,22 @@ const Chat = () => {
             <div className="image flex justify-center items-center gap-3 p-2">
               <img
                 className="border-2 border-gray-600 rounded-full aspect-square object-cover"
-                src={selectedUser.image ? `${import.meta.env.VITE_API_URL+selectedUser.image}` : "/user.png"}
+                src={
+                  selectedUser.image
+                    ? `${import.meta.env.VITE_API_URL + selectedUser.image}`
+                    : "/user.png"
+                }
                 width={50}
                 alt="Profile pic"
               />
-              <div className="username text-2xl font-bold">{selectedUser.userName}</div>
+              <div className="username text-2xl font-bold">
+                {selectedUser.userName}
+              </div>
             </div>
           ) : (
-            <p className="text-2xl font-bold ml-2 text-gray-200">No User Selected</p>
+            <p className="text-2xl font-bold ml-2 text-gray-200">
+              No User Selected
+            </p>
           )}
           <div className="flex justify-center items-center gap-4">
             <img
