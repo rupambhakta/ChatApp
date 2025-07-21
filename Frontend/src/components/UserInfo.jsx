@@ -14,7 +14,7 @@ const UserInfo = ({ user, onSelect, selected }) => {
 
   return (
     <div
-      className={`flex justify-between p-3 hover:bg-gray-800 m-2 rounded-2xl ${
+      className={`flex justify-between p-3 hover:bg-gray-800 transition-colors duration-100 ease-in-out m-2 rounded-2xl ${
         selected ? "bg-gray-800" : "hover:bg-gray-800"
       }`}
       onClick={onSelect}

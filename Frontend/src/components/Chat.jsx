@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import UserInfo from "./UserInfo";
 import axios from "axios";
+import EmojiPicker from "emoji-picker-react";
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -9,6 +10,13 @@ const Chat = () => {
   const [selectedUser, setSelectedUser] = useState();
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const handleEmojiClick = (emojiData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    // setShowEmojiPicker(false);
+  };
 
   const fetchData = async () => {
     try {
@@ -20,18 +28,15 @@ const Chat = () => {
   };
 
   const fetchSearchResults = async (term) => {
-  try {
-    const response = await axios.get(`http://localhost:5080/users?search=${term}`);
-    setFilteredUsers(response.data);
-  } catch (error) {
-    console.error("Error fetching search results:", error);
-  }
-};
-
-  // Filter users based on search term
-  // const filteredUsers = users.filter((user) =>
-  //   user.userName.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
+    try {
+      const response = await axios.get(
+        `http://localhost:5080/users?search=${term}`
+      );
+      setFilteredUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching search results:", error);
+    }
+  };
 
   const handleLogout = () => {
     const confirmLogout = window.confirm("Are you sure you want to logout?");
@@ -67,12 +72,12 @@ const Chat = () => {
   }, [searchTerm, users]);
 
   useEffect(() => {
-  if (searchTerm.trim() === "") {
-    setFilteredUsers(users);
-  } else {
-    fetchSearchResults(searchTerm);
-  }
-}, [searchTerm]);
+    if (searchTerm.trim() === "") {
+      setFilteredUsers(users);
+    } else {
+      fetchSearchResults(searchTerm);
+    }
+  }, [searchTerm]);
 
   return (
     <div className="bg-gray-900 h-screen text-white flex">
@@ -147,17 +152,32 @@ const Chat = () => {
           </div>
         </nav>
         {/* Make chat area grow and scrollable */}
-        <div className="chat bg-gray-800 flex-1 overflow-y-auto">
+        <div
+          onClick={() => setShowEmojiPicker(false)}
+          className="chat bg-gray-800 flex-1 overflow-y-auto"
+        >
           {/* chat messages */}
         </div>
         <div className="sendMessage sticky bottom-0 bg-gray-850 px-4 py-2 flex gap-2 border-t-2 border-black">
-          <div className="flex justify-center items-center">
-            <img src="/emoji.png" alt="emoji" />
+          <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
+            <img
+              src="/emoji.png"
+              alt="emoji"
+              onClick={() => setShowEmojiPicker((prev) => !prev)}
+            />
+            {showEmojiPicker && (
+              <div className="absolute bottom-12 z-50">
+                <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+              </div>
+            )}
           </div>
           <input
             className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200 shadow-sm"
             type="text"
             placeholder="Type your message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onClick={() => setShowEmojiPicker(false)}
           />
           <button className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors">
             <img src="/send.png" alt="send" width={20} />
