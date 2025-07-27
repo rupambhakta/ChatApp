@@ -3,6 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import UserInfo from "./UserInfo";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
+import { jwtDecode } from "jwt-decode";
+
+const token = localStorage.getItem("NexTalktoken");
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -12,6 +15,22 @@ const Chat = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [message, setMessage] = useState("");
+  
+  const getTokenExpiryStatus = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      const currentTime = Math.floor(Date.now() / 1000); // in seconds
+      const timeLeft = decoded.exp - currentTime;
+
+      if (timeLeft <= 0) {
+        return { expired: true, secondsLeft: 0 };
+      }
+
+      return { expired: false, secondsLeft: timeLeft };
+    } catch (error) {
+      return { expired: true, secondsLeft: 0 };
+    }
+  };
 
   const handleEmojiClick = (emojiData) => {
     setMessage((prev) => prev + emojiData.emoji);
@@ -20,7 +39,11 @@ const Chat = () => {
 
   const fetchData = async () => {
     try {
-      const responce = await axios.get("http://localhost:5080/users");
+      const responce = await axios.get("http://localhost:5080/users", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      });
       setUsers(responce.data);
     } catch (e) {
       console.error("Error fetching users:", e);
@@ -30,7 +53,11 @@ const Chat = () => {
   const fetchSearchResults = async (term) => {
     try {
       const response = await axios.get(
-        `http://localhost:5080/users?search=${term}`
+        `http://localhost:5080/users?search=${term}`,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
+        }
       );
       setFilteredUsers(response.data);
     } catch (error) {
@@ -45,6 +72,19 @@ const Chat = () => {
       navigate("/login");
     }
   };
+
+  useEffect(() => {
+    if (token) {
+      const { expired, secondsLeft } = getTokenExpiryStatus(token);
+
+      if (expired) {
+        localStorage.removeItem("NexTalktoken");
+      } else {
+        console.log("Token is valid. Time left:", secondsLeft, "seconds");
+        navigate("/chat");
+      }
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (!localStorage.getItem("NexTalktoken")) {
@@ -102,7 +142,7 @@ const Chat = () => {
           {filteredUsers.map((user) => (
             <UserInfo
               onSelect={() => setSelectedUser(user)}
-              key={user._id}
+              key={user.userName + user.date}
               user={user}
               selected={selectedUser?.userName === user.userName}
             />

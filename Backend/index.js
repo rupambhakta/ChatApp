@@ -99,7 +99,7 @@ app.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
   const NexTalktoken = jwt.sign({ userId: user._id }, "secret", {
-    expiresIn: "1h",
+    expiresIn: "7d",
   });
   res.json({ NexTalktoken });
 });
@@ -146,7 +146,7 @@ app.post("/admin/dashboard", async (req, res) => {
 });
 
 // Get all users
-app.get("/users", async (req, res) => {
+app.get("/users",verifyToken, async (req, res) => {
   try {
     const searchTerm = req.query.search;
 

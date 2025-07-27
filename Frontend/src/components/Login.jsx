@@ -19,7 +19,6 @@ const Login = () => {
     });
 
     const data = await responce.json();
-    console.log(data);
     
     setAuthLoading(false);
     if (data.NexTalktoken ) {
