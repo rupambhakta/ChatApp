@@ -23,6 +23,7 @@ const Login = () => {
     setAuthLoading(false);
     if (data.NexTalktoken ) {
       localStorage.setItem("NexTalktoken", data.NexTalktoken);
+      localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/Chat");
     } else {
       setAuthError(data.message || "Login Failed");

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import UserInfo from "./UserInfo";
 import axios from "axios";
@@ -6,6 +6,8 @@ import EmojiPicker from "emoji-picker-react";
 import { jwtDecode } from "jwt-decode";
 
 const token = localStorage.getItem("NexTalktoken");
+const apiUrl = import.meta.env.VITE_API_URL;
+const user = JSON.parse(localStorage.getItem("user"));
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -14,8 +16,65 @@ const Chat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [message, setMessage] = useState("");
-  
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+
+  const getMessages = async (userId) => {
+    try {
+      const res = await axios.get(`${apiUrl}/api/messages/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      // set({ messages: res.data });
+      setMessages(res.data);
+    } catch (error) {
+      toast.error(error.response.data.message);
+    } finally {
+      // set({ isMessagesLoading: false });
+      console.log("GetMessage Called");
+    }
+  };
+
+  const sendMessage = async (messageData) => {
+    // const { selectedUser, messages } = get();
+    try {
+      const res = await axios.post(
+        `${apiUrl}/api/messages/send`,
+        messageData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // set({ messages: [...messages, res.data] });
+      setMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages, res.data];
+        return updatedMessages;
+      });
+    } catch (error) {
+      toast.error(error.response.data.message);
+    }
+  };
+
+  const subscribeToMessages = () => {
+    // const { selectedUser } = get();
+    if (!selectedUser) return;
+
+    const socket = useAuthStore.getState().socket;
+
+    socket.on("newMessage", (newMessage) => {
+      const isMessageSentFromSelectedUser =
+        newMessage.senderId === selectedUser._id;
+      if (!isMessageSentFromSelectedUser) return;
+
+      set({
+        messages: [...get().messages, newMessage],
+      });
+    });
+  };
+
   const getTokenExpiryStatus = (token) => {
     try {
       const decoded = jwtDecode(token);
@@ -33,16 +92,16 @@ const Chat = () => {
   };
 
   const handleEmojiClick = (emojiData) => {
-    setMessage((prev) => prev + emojiData.emoji);
+    setText((prev) => prev + emojiData.emoji);
     // setShowEmojiPicker(false);
   };
 
   const fetchData = async () => {
     try {
-      const responce = await axios.get("http://localhost:5080/users", {
+      const responce = await axios.get(`${apiUrl}/users`, {
         headers: {
           Authorization: `Bearer ${token}`,
-        }
+        },
       });
       setUsers(responce.data);
     } catch (e) {
@@ -53,10 +112,11 @@ const Chat = () => {
   const fetchSearchResults = async (term) => {
     try {
       const response = await axios.get(
-        `http://localhost:5080/users?search=${term}`,{
+        `http://localhost:5080/users?search=${term}`,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
-          }
+          },
         }
       );
       setFilteredUsers(response.data);
@@ -119,6 +179,40 @@ const Chat = () => {
     }
   }, [searchTerm]);
 
+  const handleSelectUser = (user) => {
+    setSelectedUser(user);
+    getMessages(user.userId);
+  };
+
+  const formatMessageTime = (date) => {
+    return new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  // Add this at the top with other state declarations
+  const messagesEndRef = useRef(null);
+
+  // Add this function after other functions
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Add this useEffect to trigger scroll on new messages
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const formatImageUrl = (imageUrl) => {
+    if (imageUrl) {
+      return apiUrl + imageUrl;
+    } else {
+      return "/user.png";
+    }
+  };
+
   return (
     <div className="bg-gray-900 h-screen text-white flex">
       {/* For User Information */}
@@ -141,7 +235,7 @@ const Chat = () => {
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {filteredUsers.map((user) => (
             <UserInfo
-              onSelect={() => setSelectedUser(user)}
+              onSelect={() => handleSelectUser(user)}
               key={user.userName + user.date}
               user={user}
               selected={selectedUser?.userName === user.userName}
@@ -149,6 +243,7 @@ const Chat = () => {
           ))}
         </div>
       </div>
+
       {/* for chat portion */}
       <div
         id="chatPortion"
@@ -191,13 +286,77 @@ const Chat = () => {
             />
           </div>
         </nav>
+
         {/* Make chat area grow and scrollable */}
         <div
           onClick={() => setShowEmojiPicker(false)}
           className="chat bg-gray-800 flex-1 overflow-y-auto"
         >
           {/* chat messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message._id}
+                className={`flex ${
+                  message.senderId === user._id
+                    ? "justify-end"
+                    : "justify-start"
+                } mb-4`}
+              >
+                <div
+                  className={`flex ${
+                    message.senderId === user._id
+                      ? "flex-row-reverse"
+                      : "flex-row"
+                  } items-end gap-2 max-w-[80%]`}
+                >
+                  <div className="flex-shrink-0">
+                    <img
+                      className="w-8 h-8 rounded-full border-2 border-gray-600"
+                      src={
+                        message.senderId === user._id
+                          ? formatImageUrl(user.profileImage)
+                          : formatImageUrl(selectedUser.profileImage)
+                      }
+                      alt="profile pic"
+                    />
+                  </div>
+                  <div
+                    className={`flex flex-col ${
+                      message.senderId === user._id
+                        ? "items-end"
+                        : "items-start"
+                    }`}
+                  >
+                    <div
+                      className={`p-3 rounded-lg ${
+                        message.senderId === user._id
+                          ? "bg-blue-600 text-white rounded-br-none"
+                          : "bg-gray-700 text-white rounded-bl-none"
+                      }`}
+                    >
+                      {message.image && (
+                        <img
+                          src={message.image}
+                          alt="Attachment"
+                          className="max-w-[200px] rounded-md mb-2"
+                        />
+                      )}
+                      {message.text && (
+                        <p className="break-words">{message.text}</p>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400 mt-1">
+                      {formatMessageTime(message.createdAt)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
+
         <div className="sendMessage sticky bottom-0 bg-gray-850 px-4 py-2 flex gap-2 border-t-2 border-black">
           <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
             <img
@@ -215,11 +374,21 @@ const Chat = () => {
             className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200 shadow-sm"
             type="text"
             placeholder="Type your message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             onClick={() => setShowEmojiPicker(false)}
           />
-          <button className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors">
+          <button
+            className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
+            onClick={() => {
+              sendMessage({
+                text: text,
+                senderId: user._id,
+                receiverId: selectedUser.userId,
+              });
+              setText("");
+            }}
+          >
             <img src="/send.png" alt="send" width={20} />
           </button>
         </div>
