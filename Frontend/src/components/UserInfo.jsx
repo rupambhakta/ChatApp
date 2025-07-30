@@ -1,13 +1,22 @@
 import React from "react";
 
-const UserInfo = ({ user, onSelect, selected }) => {
-  console.log(user);
-  const date = new Date(user.date);
-  const formattedDate = `${date.getDate().toString().padStart(2, "0")}/${(
-    date.getMonth() + 1
-  )
-    .toString()
-    .padStart(2, "0")}/${date.getFullYear().toString().slice(-2)}`;
+const formatDateOrTime = (dateString) => {
+  const date = new Date(dateString);
+  const isToday = date.toDateString() === new Date().toDateString();
+  return isToday
+    ? `${date.getHours().toString().padStart(2, "0")}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`
+    : `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}/${date.getFullYear()}`;
+};
+
+const UserInfo = ({ user, onSelect, selected, lastMessage }) => {
+  console.log("last message date: ", lastMessage?.createdAt);
+  
+  const formattedDate = formatDateOrTime(lastMessage?.createdAt ?? user.createdAt);
   const profileImage = user.image
     ? import.meta.env.VITE_API_URL + user.image
     : undefined;
@@ -30,7 +39,7 @@ const UserInfo = ({ user, onSelect, selected }) => {
         </div>
         <div>
           <div>{user.userName}</div>
-          <div>Message...</div>
+          <div>{lastMessage?.text || "No message"}</div>
         </div>
       </div>
       <div className="flex flex-col justify-center items-center">

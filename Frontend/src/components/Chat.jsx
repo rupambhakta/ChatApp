@@ -7,10 +7,12 @@ import { jwtDecode } from "jwt-decode";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import SidebarSkleton from "./skeletons/SidebarSkeleton";
 import NoChatSelected from "./NoChatSelected";
+import { io } from 'socket.io-client';
 
 const token = localStorage.getItem("NexTalktoken");
 const apiUrl = import.meta.env.VITE_API_URL;
 const user = JSON.parse(localStorage.getItem("user"));
+const socket = io(apiUrl);
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ const Chat = () => {
   const [text, setText] = useState("");
   const [messageLoading, setMessageLoading] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
+  const [lastMessages, setLastMessages] = useState([]);
 
   const getMessages = async (userId) => {
     setMessageLoading(true);
@@ -47,20 +50,20 @@ const Chat = () => {
   const sendMessage = async (messageData) => {
     // const { selectedUser, messages } = get();
     try {
-      const res = await axios.post(`${apiUrl}/api/messages/send`, messageData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      // set({ messages: [...messages, res.data] });
-      setMessages((prevMessages) => {
-        const updatedMessages = [...prevMessages, res.data];
-        return updatedMessages;
-      });
+      socket.emit('chat message', messageData);
+      socket.emit('getLastMessages', user._id);
     } catch (error) {
       toast.error(error.response.data.message);
     }
   };
+
+  useEffect(() => {
+    socket.on('chat message', (msg) => {
+      setMessages(prev => [...prev, msg]);
+      fetchLastMessages();
+    });
+    return () => socket.off('chat message');
+  }, []);
 
   const subscribeToMessages = () => {
     // const { selectedUser } = get();
@@ -139,6 +142,20 @@ const Chat = () => {
     }
   };
 
+  const fetchLastMessages = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/last-messages`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setLastMessages(response.data);
+    } catch (error) {
+      console.error("Error fetching last messages:", error);
+    }
+  };
+
+
   useEffect(() => {
     if (token) {
       const { expired, secondsLeft } = getTokenExpiryStatus(token);
@@ -159,6 +176,7 @@ const Chat = () => {
       //   setUsers(filteredUsers);
     } else {
       fetchData();
+      fetchLastMessages();
     }
   }, [navigate]);
 
@@ -266,6 +284,7 @@ const Chat = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {filteredUsers.map((user) => (
               <UserInfo
+                lastMessage={lastMessages.find((msg) => msg.receiverId === user.userId || msg.senderId === user.userId)}
                 onSelect={() => handleSelectUser(user)}
                 key={user.userName + user.date}
                 user={user}
@@ -345,7 +364,7 @@ const Chat = () => {
                           src={
                             message.senderId === user._id
                               ? formatImageUrl(user.profileImage)
-                              : formatImageUrl(selectedUser.profileImage)
+                              : formatImageUrl(selectedUser.image)
                           }
                           alt="profile pic"
                         />
@@ -403,13 +422,17 @@ const Chat = () => {
 
             <textarea
               ref={textareaRef}
-              className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[80px]"
+              className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[40px]"
               placeholder="Type your message"
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
-                e.target.style.height = "40px";
+                // e.target.style.height = "40px";
                 e.target.style.height = `${Math.min(
+                  e.target.scrollHeight,
+                  80
+                )}px`;
+                e.target.style.maxHeight = `${Math.min(
                   e.target.scrollHeight,
                   80
                 )}px`;

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+/* @plugin "daisyui"; */
 /* Add this CSS for the custom dark gray scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;

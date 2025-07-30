@@ -6,7 +6,7 @@ const path = require("path");
 require("dotenv").config();
 const User = require("./models/SingUp");
 const Message = require("./models/messageSchema");
-const { io, getReceiverSocketId,server,app } = require('./lib/socket');
+const { io, getReceiverSocketId, server, app } = require("./lib/socket");
 // const app = express();
 const PORT = 5080;
 
@@ -161,12 +161,16 @@ app.post("/admin/dashboard", async (req, res) => {
 app.get("/users", verifyToken, async (req, res) => {
   try {
     const searchTerm = req.query.search;
+    const myId = req.user.userId;
 
     let query = {};
     if (searchTerm) {
       query = {
         userName: { $regex: searchTerm, $options: "i" }, // Case-insensitive match
+        _id: { $ne: myId }, // Exclude current user
       };
+    } else {
+      query = { _id: { $ne: myId } }; // Exclude current user
     }
 
     const users = await User.find(query, "userName createdAt profileImage");
@@ -260,8 +264,6 @@ app.get("/api/messages/:id", verifyToken, async (req, res) => {
 
     console.log(myId);
     console.log(userToChatId);
-    
-    
 
     const messages = await Message.find({
       $or: [
@@ -277,37 +279,45 @@ app.get("/api/messages/:id", verifyToken, async (req, res) => {
   }
 });
 
-app.post("/api/messages/send", verifyToken, async (req, res) => {
+app.get("/api/last-messages", verifyToken, async (req, res) => {
   try {
-    const { text, image, senderId, receiverId } = req.body;
+    const myId = req.user.userId;
+    const lastMessages = await Message.aggregate([
+      {
+        $match: {
+          $or: [
+            { senderId: new mongoose.Types.ObjectId(myId) },
+            { receiverId: new mongoose.Types.ObjectId(myId) },
+          ],
+        },
+      },
+      {
+        $sort: { createdAt: -1 },
+      },
+      {
+        $group: {
+          _id: {
+            $cond: [
+              { $eq: ["$senderId", new mongoose.Types.ObjectId(myId)] },
+              "$receiverId",
+              "$senderId",
+            ],
+          },
+          lastMessage: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$lastMessage" },
+      },
+    ]);
 
-    let imageUrl;
-    if (image) {
-      // Upload base64 image to cloudinary
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
-    }
-
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      text,
-      image: imageUrl,
-    });
-
-    await newMessage.save();
-
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
-
-    res.status(201).json(newMessage);
+    res.status(200).json(lastMessages);
   } catch (error) {
-    console.log("Error in sendMessage controller: ", error.message);
+    console.error("Error in getLastMessages controller:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
 
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
