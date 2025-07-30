@@ -11,6 +11,7 @@ const user = JSON.parse(localStorage.getItem("user"));
 
 const Chat = () => {
   const navigate = useNavigate();
+  const textareaRef = useRef(null);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,6 +19,7 @@ const Chat = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const [expanded, setExpanded] = useState(false);
 
   const getMessages = async (userId) => {
     try {
@@ -201,11 +203,22 @@ const Chat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // Set initial textarea height
+  useEffect(() => {
+    resetTextareaHeight();
+  }, []);
+
   const formatImageUrl = (imageUrl) => {
     if (imageUrl) {
       return apiUrl + imageUrl;
     } else {
       return "/user.png";
+    }
+  };
+
+  const resetTextareaHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "40px";
     }
   };
 
@@ -217,6 +230,7 @@ const Chat = () => {
       receiverId: selectedUser.userId,
     });
     setText("");
+    resetTextareaHeight();
   };
 
   return (
@@ -376,19 +390,28 @@ const Chat = () => {
               </div>
             )}
           </div>
-          <input
-            className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200 shadow-sm"
-            type="text"
+
+          <textarea
+            ref={textareaRef}
+            className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[80px]"
             placeholder="Type your message"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              e.target.style.height = "40px";
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
+            }}
             onClick={() => setShowEmojiPicker(false)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && text.length > 0 && !e.shiftKey) {
-                handleSendMessage();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (text.trim().length > 0) {
+                  handleSendMessage();
+                }
               }
             }}
           />
+
           <button
             className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
             onClick={handleSendMessage}
