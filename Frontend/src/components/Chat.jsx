@@ -4,6 +4,9 @@ import UserInfo from "./UserInfo";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 import { jwtDecode } from "jwt-decode";
+import MessageSkeleton from "./skeletons/MessageSkeleton";
+import SidebarSkleton from "./skeletons/SidebarSkeleton";
+import NoChatSelected from "./NoChatSelected";
 
 const token = localStorage.getItem("NexTalktoken");
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -19,9 +22,11 @@ const Chat = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [userLoading, setUserLoading] = useState(false);
 
   const getMessages = async (userId) => {
+    setMessageLoading(true);
     try {
       const res = await axios.get(`${apiUrl}/api/messages/${userId}`, {
         headers: {
@@ -30,6 +35,7 @@ const Chat = () => {
       });
       // set({ messages: res.data });
       setMessages(res.data);
+      setMessageLoading(false);
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {
@@ -95,6 +101,7 @@ const Chat = () => {
   };
 
   const fetchData = async () => {
+    setUserLoading(true);
     try {
       const responce = await axios.get(`${apiUrl}/users`, {
         headers: {
@@ -102,6 +109,7 @@ const Chat = () => {
         },
       });
       setUsers(responce.data);
+      setUserLoading(false);
     } catch (e) {
       console.error("Error fetching users:", e);
     }
@@ -252,25 +260,29 @@ const Chat = () => {
             className="w-2/4 mr-2 p-1 rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200  shadow-sm "
           />
         </nav>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {filteredUsers.map((user) => (
-            <UserInfo
-              onSelect={() => handleSelectUser(user)}
-              key={user.userName + user.date}
-              user={user}
-              selected={selectedUser?.userName === user.userName}
-            />
-          ))}
-        </div>
+        {userLoading ? (
+          <SidebarSkleton />
+        ) : (
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {filteredUsers.map((user) => (
+              <UserInfo
+                onSelect={() => handleSelectUser(user)}
+                key={user.userName + user.date}
+                user={user}
+                selected={selectedUser?.userName === user.userName}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* for chat portion */}
-      <div
-        id="chatPortion"
-        className="bg-gray-850 w-2/3 flex flex-col h-screen"
-      >
-        <nav className="flex items-center justify-between h-[64px] border-b-2 border-black">
-          {selectedUser ? (
+      {selectedUser ? (
+        <div
+          id="chatPortion"
+          className="bg-gray-900 w-2/3 flex flex-col h-screen"
+        >
+          <nav className="flex items-center justify-between h-[64px] border-b-2 border-black">
             <div className="image flex justify-center items-center gap-3 p-2">
               <img
                 className="border-2 border-gray-600 rounded-full aspect-square object-cover"
@@ -286,140 +298,148 @@ const Chat = () => {
                 {selectedUser.userName}
               </div>
             </div>
-          ) : (
-            <p className="text-2xl font-bold ml-2 text-gray-200">
-              No User Selected
-            </p>
-          )}
-          <div className="flex justify-center items-center gap-4">
-            <img
-              onClick={() => navigate("/chat/dashboard")}
-              className="cursor-pointer"
-              src="/account.png"
-              alt="account"
-            />
-            <img
-              onClick={handleLogout}
-              className="cursor-pointer"
-              src="/logout.png"
-              alt="logout"
-            />
-          </div>
-        </nav>
+            <div className="flex justify-center items-center gap-4">
+              <img
+                onClick={() => navigate("/chat/dashboard")}
+                className="cursor-pointer"
+                src="/account.png"
+                alt="account"
+              />
+              <img
+                onClick={handleLogout}
+                className="cursor-pointer"
+                src="/logout.png"
+                alt="logout"
+              />
+            </div>
+          </nav>
 
-        {/* Make chat area grow and scrollable */}
-        <div
-          onClick={() => setShowEmojiPicker(false)}
-          className="chat bg-gray-800 flex-1 overflow-y-auto"
-        >
-          {/* chat messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message._id}
-                className={`flex ${
-                  message.senderId === user._id
-                    ? "justify-end"
-                    : "justify-start"
-                } mb-4`}
-              >
-                <div
-                  className={`flex ${
-                    message.senderId === user._id
-                      ? "flex-row-reverse"
-                      : "flex-row"
-                  } items-end gap-2 max-w-[80%]`}
-                >
-                  <div className="flex-shrink-0">
-                    <img
-                      className="w-8 h-8 rounded-full border-2 border-gray-600"
-                      src={
-                        message.senderId === user._id
-                          ? formatImageUrl(user.profileImage)
-                          : formatImageUrl(selectedUser.profileImage)
-                      }
-                      alt="profile pic"
-                    />
-                  </div>
+          <div
+            onClick={() => setShowEmojiPicker(false)}
+            className="chat bg-gray-900 flex-1 overflow-y-auto"
+          >
+            {/* chat messages */}
+            {messageLoading ? (
+              <MessageSkeleton />
+            ) : (
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.map((message) => (
                   <div
-                    className={`flex flex-col ${
+                    key={message._id}
+                    className={`flex ${
                       message.senderId === user._id
-                        ? "items-end"
-                        : "items-start"
-                    }`}
+                        ? "justify-end"
+                        : "justify-start"
+                    } mb-4`}
                   >
                     <div
-                      className={`p-3 rounded-lg ${
+                      className={`flex ${
                         message.senderId === user._id
-                          ? "bg-blue-600 text-white rounded-br-none"
-                          : "bg-gray-700 text-white rounded-bl-none"
-                      }`}
+                          ? "flex-row-reverse"
+                          : "flex-row"
+                      } items-end gap-2 max-w-[80%]`}
                     >
-                      {message.image && (
+                      <div className="flex-shrink-0">
                         <img
-                          src={message.image}
-                          alt="Attachment"
-                          className="max-w-[200px] rounded-md mb-2"
+                          className="w-8 h-8 rounded-full border-2 border-gray-600"
+                          src={
+                            message.senderId === user._id
+                              ? formatImageUrl(user.profileImage)
+                              : formatImageUrl(selectedUser.profileImage)
+                          }
+                          alt="profile pic"
                         />
-                      )}
-                      {message.text && (
-                        <p className="break-words">{message.text}</p>
-                      )}
+                      </div>
+                      <div
+                        className={`flex flex-col ${
+                          message.senderId === user._id
+                            ? "items-end"
+                            : "items-start"
+                        }`}
+                      >
+                        <div
+                          className={`p-3 rounded-lg ${
+                            message.senderId === user._id
+                              ? "bg-blue-600 text-white rounded-br-none"
+                              : "bg-gray-700 text-white rounded-bl-none"
+                          }`}
+                        >
+                          {message.image && (
+                            <img
+                              src={message.image}
+                              alt="Attachment"
+                              className="max-w-[200px] rounded-md mb-2"
+                            />
+                          )}
+                          {message.text && (
+                            <p className="break-words">{message.text}</p>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-400 mt-1">
+                          {formatMessageTime(message.createdAt)}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-xs text-gray-400 mt-1">
-                      {formatMessageTime(message.createdAt)}
-                    </span>
                   </div>
-                </div>
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        <div className="sendMessage sticky bottom-0 bg-gray-850 px-4 py-2 flex gap-2 border-t-2 border-black">
-          <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
-            <img
-              src="/emoji.png"
-              alt="emoji"
-              onClick={() => setShowEmojiPicker((prev) => !prev)}
-            />
-            {showEmojiPicker && (
-              <div className="absolute bottom-12 z-50">
-                <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+                ))}
+                <div ref={messagesEndRef} />
               </div>
             )}
           </div>
 
-          <textarea
-            ref={textareaRef}
-            className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[80px]"
-            placeholder="Type your message"
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              e.target.style.height = "40px";
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 80)}px`;
-            }}
-            onClick={() => setShowEmojiPicker(false)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (text.trim().length > 0) {
-                  handleSendMessage();
-                }
-              }
-            }}
-          />
+          <div className="sendMessage sticky bottom-0 bg-gray-850 px-4 py-2 flex gap-2 border-t-2 border-black">
+            <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
+              <img
+                src="/emoji.png"
+                alt="emoji"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
+              />
+              {showEmojiPicker && (
+                <div className="absolute bottom-12 z-50">
+                  <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
+                </div>
+              )}
+            </div>
 
-          <button
-            className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
-            onClick={handleSendMessage}
-          >
-            <img src="/send.png" alt="send" width={20} />
-          </button>
+            <textarea
+              ref={textareaRef}
+              className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[80px]"
+              placeholder="Type your message"
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                e.target.style.height = "40px";
+                e.target.style.height = `${Math.min(
+                  e.target.scrollHeight,
+                  80
+                )}px`;
+              }}
+              onClick={() => setShowEmojiPicker(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  if (text.trim().length > 0) {
+                    handleSendMessage();
+                  }
+                }
+              }}
+            />
+
+            <button
+              className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
+              onClick={handleSendMessage}
+            >
+              <img src="/send.png" alt="send" width={20} />
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-gray-850 w-2/3 flex flex-col h-screen">
+          <div className="flex-1 bg-gray-800 overflow-hidden">
+            <NoChatSelected />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
