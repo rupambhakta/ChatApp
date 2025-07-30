@@ -39,15 +39,11 @@ const Chat = () => {
   const sendMessage = async (messageData) => {
     // const { selectedUser, messages } = get();
     try {
-      const res = await axios.post(
-        `${apiUrl}/api/messages/send`,
-        messageData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await axios.post(`${apiUrl}/api/messages/send`, messageData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       // set({ messages: [...messages, res.data] });
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages, res.data];
@@ -211,6 +207,16 @@ const Chat = () => {
     } else {
       return "/user.png";
     }
+  };
+
+  const handleSendMessage = () => {
+    if (text.length === 0) return;
+    sendMessage({
+      text: text,
+      senderId: user._id,
+      receiverId: selectedUser.userId,
+    });
+    setText("");
   };
 
   return (
@@ -377,17 +383,15 @@ const Chat = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             onClick={() => setShowEmojiPicker(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && text.length > 0 && !e.shiftKey) {
+                handleSendMessage();
+              }
+            }}
           />
           <button
             className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
-            onClick={() => {
-              sendMessage({
-                text: text,
-                senderId: user._id,
-                receiverId: selectedUser.userId,
-              });
-              setText("");
-            }}
+            onClick={handleSendMessage}
           >
             <img src="/send.png" alt="send" width={20} />
           </button>
