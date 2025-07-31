@@ -29,6 +29,27 @@ const Chat = () => {
   const [lastMessages, setLastMessages] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
 
+  // For responsice view
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  // useEffect to handle screen resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth <= 768);
+    };
+    // Set initial value
+    handleResize();
+    // Add event listener
+    window.addEventListener("resize", handleResize);
+    // Cleanup
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // function to go back to user list in mobile view
+  const handleBackToUsers = () => {
+    setShowSidebar(true);
+  };
+
   const getMessages = async (userId) => {
     setMessageLoading(true);
     try {
@@ -218,6 +239,9 @@ const Chat = () => {
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     getMessages(user.userId);
+    if (isMobileView) {
+      setShowSidebar(false);
+    }
   };
 
   const formatMessageTime = (date) => {
@@ -273,13 +297,17 @@ const Chat = () => {
 
   return (
     <div className="bg-gray-900 h-screen text-white flex">
-      {/* For User Information */}
+      {/* User Information Section */}
       <div
         id="userInfo"
-        className="bg-gray-850 w-1/3 border-r-2 border-black h-screen flex flex-col"
+        className={`bg-gray-850 ${
+          isMobileView ? "w-full absolute z-20" : "w-1/3"
+        } border-r-2 border-black h-screen flex flex-col ${
+          isMobileView && !showSidebar ? "hidden" : "block"
+        }`}
       >
         <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 bg-gray-850">
-          <h1 className="w-1/3 ml-2 font-extrabold text-3xl select-none text-orange-500">
+          <h1 className="w-1/3 ml-2 font-extrabold text-xl md:text-3xl select-none text-orange-500">
             NexTalk
           </h1>
           <input
@@ -287,7 +315,7 @@ const Chat = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             type="search"
             placeholder=" Start a new chat"
-            className="w-2/4 mr-2 p-1 rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200  shadow-sm "
+            className="w-2/4 mr-2 p-1 rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200 shadow-sm text-sm md:text-base"
           />
         </nav>
         {userLoading ? (
@@ -311,41 +339,56 @@ const Chat = () => {
         )}
       </div>
 
-      {/* for chat portion */}
+      {/* Chat Section */}
       {selectedUser ? (
         <div
           id="chatPortion"
-          className="bg-gray-900 w-2/3 flex flex-col h-screen"
+          className={`bg-gray-900 ${
+            isMobileView ? "w-full absolute z-10" : "w-2/3"
+          } flex flex-col h-screen ${
+            isMobileView && showSidebar ? "hidden" : "block"
+          }`}
         >
-          <nav className="flex items-center justify-between h-[64px] border-b-2 border-black">
+          <nav className="flex items-center justify-between h-[64px] border-b-2 border-black bg-gray-850">
             <div className="image flex justify-center items-center gap-3 p-2">
+              {isMobileView && (
+                <button
+                  onClick={handleBackToUsers}
+                  className="p-2 rounded-full hover:bg-gray-700"
+                >
+                  <img src="/back-arrow.png" alt="Back" className="w-6 h-6" />
+                </button>
+              )}
               <img
-                className="border-2 border-gray-600 rounded-full aspect-square object-cover"
+                className="border-2 border-gray-600 rounded-full aspect-square object-cover w-10 h-10 md:w-12 md:h-12"
                 src={
                   selectedUser.image
                     ? `${import.meta.env.VITE_API_URL + selectedUser.image}`
                     : "/user.png"
                 }
-                width={50}
                 alt="Profile pic"
               />
               <div>
-                <div className="username text-2xl font-bold">
+                <div className="username text-lg md:text-2xl font-bold">
                   {selectedUser.userName}
                 </div>
-                <div className="onlineStatus">{onlineUsers.includes(selectedUser.userId) ? "Online" : "Offline"}</div>
+                <div className="onlineStatus text-sm">
+                  {onlineUsers.includes(selectedUser.userId)
+                    ? "Online"
+                    : "Offline"}
+                </div>
               </div>
             </div>
-            <div className="flex justify-center items-center gap-4">
+            <div className="flex justify-center items-center gap-4 pr-2">
               <img
                 onClick={() => navigate("/chat/dashboard")}
-                className="cursor-pointer"
+                className="cursor-pointer w-6 h-6 md:w-8 md:h-8"
                 src="/account.png"
                 alt="account"
               />
               <img
                 onClick={handleLogout}
-                className="cursor-pointer"
+                className="cursor-pointer w-6 h-6 md:w-8 md:h-8"
                 src="/logout.png"
                 alt="logout"
               />
@@ -354,13 +397,12 @@ const Chat = () => {
 
           <div
             onClick={() => setShowEmojiPicker(false)}
-            className="chat bg-gray-900 flex-1 overflow-y-auto  custom-scrollbar"
+            className="chat bg-gray-900 flex-1 overflow-y-auto custom-scrollbar"
           >
-            {/* chat messages */}
             {messageLoading ? (
               <MessageSkeleton />
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 custom-scrollbar">
                 {messages.map((message) => (
                   <div
                     key={message._id}
@@ -375,11 +417,11 @@ const Chat = () => {
                         message.senderId === user._id
                           ? "flex-row-reverse"
                           : "flex-row"
-                      } items-end gap-2 max-w-[80%]`}
+                      } items-end gap-2 max-w-[90%] md:max-w-[80%]`}
                     >
                       <div className="flex-shrink-0">
                         <img
-                          className="w-8 h-8 rounded-full border-2 border-gray-600"
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600"
                           src={
                             message.senderId === user._id
                               ? formatImageUrl(user.profileImage)
@@ -396,7 +438,7 @@ const Chat = () => {
                         }`}
                       >
                         <div
-                          className={`p-3 rounded-lg ${
+                          className={`p-2 md:p-3 rounded-lg text-sm md:text-base ${
                             message.senderId === user._id
                               ? "bg-blue-600 text-white rounded-br-none"
                               : "bg-gray-700 text-white rounded-bl-none"
@@ -406,7 +448,7 @@ const Chat = () => {
                             <img
                               src={message.image}
                               alt="Attachment"
-                              className="max-w-[200px] rounded-md mb-2"
+                              className="max-w-[150px] md:max-w-[200px] rounded-md mb-2"
                             />
                           )}
                           {message.text && (
@@ -425,15 +467,16 @@ const Chat = () => {
             )}
           </div>
 
-          <div className="sendMessage sticky bottom-0 bg-gray-850 px-4 py-2 flex gap-2 border-t-2 border-black">
+          <div className="sendMessage sticky bottom-0 bg-gray-850 px-2 md:px-4 py-2 flex gap-2 border-t-2 border-black">
             <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
               <img
                 src="/emoji.png"
                 alt="emoji"
+                className="w-6 h-6 md:w-8 md:h-8"
                 onClick={() => setShowEmojiPicker((prev) => !prev)}
               />
               {showEmojiPicker && (
-                <div className="absolute bottom-12 z-50">
+                <div className="absolute bottom-12 left-0 z-50 transform scale-75 md:scale-100 origin-bottom-left">
                   <EmojiPicker onEmojiClick={handleEmojiClick} theme="dark" />
                 </div>
               )}
@@ -441,12 +484,11 @@ const Chat = () => {
 
             <textarea
               ref={textareaRef}
-              className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[40px]"
+              className="flex-1 p-2 rounded-2xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-all duration-200 shadow-sm resize-none overflow-hidden min-h-[40px] max-h-[40px] text-sm md:text-base"
               placeholder="Type your message"
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
-                // e.target.style.height = "40px";
                 e.target.style.height = `${Math.min(
                   e.target.scrollHeight,
                   80
@@ -468,15 +510,25 @@ const Chat = () => {
             />
 
             <button
-              className=" text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
+              className="text-white px-3 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors"
               onClick={handleSendMessage}
             >
-              <img src="/send.png" alt="send" width={20} />
+              <img
+                src="/send.png"
+                alt="send"
+                className="w-6 h-6 md:w-8 md:h-8"
+              />
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-gray-850 w-2/3 flex flex-col h-screen">
+        <div
+          className={`bg-gray-850 ${
+            isMobileView ? "w-full absolute z-10" : "w-2/3"
+          } flex flex-col h-screen ${
+            isMobileView && showSidebar ? "hidden" : "block"
+          }`}
+        >
           <div className="flex-1 bg-gray-800 overflow-hidden">
             <NoChatSelected />
           </div>
