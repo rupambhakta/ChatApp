@@ -267,7 +267,7 @@ const Chat = () => {
         className="bg-gray-850 w-1/3 border-r-2 border-black h-screen flex flex-col"
       >
         <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 bg-gray-850">
-          <h1 className="w-1/3 ml-2 font-extrabold text-2xl select-none text-gray-200">
+          <h1 className="w-1/3 ml-2 font-extrabold text-3xl select-none text-orange-500">
             NexTalk
           </h1>
           <input
@@ -335,13 +335,13 @@ const Chat = () => {
 
           <div
             onClick={() => setShowEmojiPicker(false)}
-            className="chat bg-gray-900 flex-1 overflow-y-auto"
+            className="chat bg-gray-900 flex-1 overflow-y-auto  custom-scrollbar"
           >
             {/* chat messages */}
             {messageLoading ? (
               <MessageSkeleton />
             ) : (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                 {messages.map((message) => (
                   <div
                     key={message._id}
