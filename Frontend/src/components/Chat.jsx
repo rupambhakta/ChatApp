@@ -306,17 +306,30 @@ const Chat = () => {
           isMobileView && !showSidebar ? "hidden" : "block"
         }`}
       >
-        <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 bg-gray-850">
-          <h1 className="w-1/3 ml-2 font-extrabold text-xl md:text-3xl select-none text-orange-500">
+        <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 bg-gray-850 px-4">
+          <h1 className="w-1/3 font-extrabold text-xl md:text-3xl select-none text-orange-500">
             NexTalk
           </h1>
-          <input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            type="search"
-            placeholder=" Start a new chat"
-            className="w-2/4 mr-2 p-1 rounded-lg border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 focus:outline-none focus:border-gray-600 transition-colors duration-200 shadow-sm text-sm md:text-base"
-          />
+          <div className="relative w-2/4">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+              <img
+                src="/search.png"
+                alt="Search"
+                className="w-5 h-5 opacity-100 object-contain"
+              />
+            </div>
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              type="search"
+              placeholder="Search for conversations..."
+              className="w-full pl-10 pr-4 py-2 rounded-xl border-2 border-gray-700 bg-gray-800 text-gray-100 placeholder-gray-400 
+        focus:outline-none focus:border-gray-500/50 focus:ring-2 focus:ring-orange-500/20
+        transition-all duration-300 ease-in-out
+        text-sm md:text-base
+        shadow-lg"
+            />
+          </div>
         </nav>
         {userLoading ? (
           <SidebarSkleton />
@@ -356,7 +369,7 @@ const Chat = () => {
                   onClick={handleBackToUsers}
                   className="p-2 rounded-full hover:bg-gray-700"
                 >
-                  <img src="/back-arrow.png" alt="Back" className="w-6 h-6" />
+                  <img src="/back.png" alt="Back" className="w-6 h-6" />
                 </button>
               )}
               <img
@@ -379,17 +392,17 @@ const Chat = () => {
                 </div>
               </div>
             </div>
-            <div className="flex justify-center items-center gap-4 pr-2">
+            <div className="flex justify-center items-center gap-5 pr-5">
               <img
                 onClick={() => navigate("/chat/dashboard")}
                 className="cursor-pointer w-6 h-6 md:w-8 md:h-8"
-                src="/account.png"
+                src="/account2.png"
                 alt="account"
               />
               <img
                 onClick={handleLogout}
                 className="cursor-pointer w-6 h-6 md:w-8 md:h-8"
-                src="/logout.png"
+                src="/logout2.png"
                 alt="logout"
               />
             </div>
@@ -467,10 +480,10 @@ const Chat = () => {
             )}
           </div>
 
-          <div className="sendMessage sticky bottom-0 bg-gray-850 px-2 md:px-4 py-2 flex gap-2 border-t-2 border-black">
+          <div className="sendMessage sticky bottom-0 bg-gray-850 px-2 md:px-4 py-2 flex justify-center items-center gap-2 border-t-2 border-black">
             <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
               <img
-                src="/emoji.png"
+                src="/emoji2.png"
                 alt="emoji"
                 className="w-6 h-6 md:w-8 md:h-8"
                 onClick={() => setShowEmojiPicker((prev) => !prev)}

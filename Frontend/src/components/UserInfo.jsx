@@ -37,7 +37,7 @@ const UserInfo = ({ user, onSelect, selected, lastMessage }) => {
             width={55}
           />
         </div>
-        <div>
+        <div className="select-none">
           <div>{user.userName}</div>
           <div>{lastMessage?.text || "No message"}</div>
         </div>
