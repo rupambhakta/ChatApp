@@ -21,19 +21,31 @@ function getReceiverSocketId(userId) {
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
 
-  socket.on('chat message', async (msg) => {
+  socket.on("setup", (userId) => {
+    userSocketMap[userId] = socket.id;
+    socket.userId = userId;
+    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  });
 
-    // Save message to DB
-    const message = new Message(msg);
-    const res = await message.save();
-    
-    // Emit to all clients
-    io.emit('chat message', res);
+  socket.on('chat message', async (msg) => {
+    console.log("Received message:", msg);
+    try {
+      // Save message to DB
+      const message = new Message(msg);
+      const savedMessage = await message.save();
+      console.log("Message saved, emitting to:", msg.receiverId);
+      
+      // Emit to both sender and receiver
+      io.to(getReceiverSocketId(msg.receiverId)).emit('chat message', savedMessage);
+      socket.emit('chat message', savedMessage);
+    } catch (error) {
+      console.error("Error handling message:", error);
+    }
   });
 
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);
-    delete userSocketMap[socket.id];
+    delete userSocketMap[socket.userId];
     io.emit("getOnlineUsers", Object.keys(userSocketMap));
   });
 });

@@ -7,7 +7,7 @@ import { jwtDecode } from "jwt-decode";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import SidebarSkleton from "./skeletons/SidebarSkeleton";
 import NoChatSelected from "./NoChatSelected";
-import { io } from 'socket.io-client';
+import { io } from "socket.io-client";
 
 const token = localStorage.getItem("NexTalktoken");
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -27,6 +27,7 @@ const Chat = () => {
   const [messageLoading, setMessageLoading] = useState(false);
   const [userLoading, setUserLoading] = useState(false);
   const [lastMessages, setLastMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   const getMessages = async (userId) => {
     setMessageLoading(true);
@@ -48,39 +49,53 @@ const Chat = () => {
   };
 
   const sendMessage = async (messageData) => {
-    // const { selectedUser, messages } = get();
     try {
-      socket.emit('chat message', messageData);
-      socket.emit('getLastMessages', user._id);
+      console.log("Sending message:", messageData);
+      socket.emit("chat message", messageData);
+      // No need to emit getLastMessages here as we'll update the messages
+      // when we receive the confirmatiFon via socket
+      setText(""); // Clear the input after sending
     } catch (error) {
-      toast.error(error.response.data.message);
+      console.error("Error sending message:", error);
+      toast.error(error.message || "Failed to send message");
     }
   };
 
   useEffect(() => {
-    socket.on('chat message', (msg) => {
-      setMessages(prev => [...prev, msg]);
+    // Setup socket connection with user ID
+    if (user?._id) {
+      socket.emit("setup", user._id);
+    }
+
+    // Subscribe to messages
+    socket.on("chat message", (msg) => {
+      console.log("Received message:", msg);
+      setMessages((prev) => {
+        // Check if message already exists to prevent duplicates
+        if (!prev.some((m) => m._id === msg._id)) {
+          return [...prev, msg];
+        }
+        return prev;
+      });
       fetchLastMessages();
     });
-    return () => socket.off('chat message');
-  }, []);
 
-  const subscribeToMessages = () => {
-    // const { selectedUser } = get();
-    if (!selectedUser) return;
+    // Cleanup function to remove event listeners
+    return () => {
+      socket.off("chat message");
+    };
+  }, [user?._id]); // Only re-run when user ID changes
 
-    const socket = useAuthStore.getState().socket;
-
-    socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser =
-        newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
-
-      set({
-        messages: [...get().messages, newMessage],
-      });
+  useEffect(() => {
+    socket.on("getOnlineUsers", (onlineUsers) => {
+      // Update state with list of online users
+      setOnlineUsers(onlineUsers);
     });
-  };
+
+    return () => {
+      socket.off("getOnlineUsers");
+    };
+  }, []);
 
   const getTokenExpiryStatus = (token) => {
     try {
@@ -155,7 +170,6 @@ const Chat = () => {
     }
   };
 
-
   useEffect(() => {
     if (token) {
       const { expired, secondsLeft } = getTokenExpiryStatus(token);
@@ -172,13 +186,11 @@ const Chat = () => {
   useEffect(() => {
     if (!localStorage.getItem("NexTalktoken")) {
       navigate("/login");
-      // } else if (searchTerm) {
-      //   setUsers(filteredUsers);
     } else {
       fetchData();
       fetchLastMessages();
     }
-  }, [navigate]);
+  }, []);
 
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -284,7 +296,11 @@ const Chat = () => {
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {filteredUsers.map((user) => (
               <UserInfo
-                lastMessage={lastMessages.find((msg) => msg.receiverId === user.userId || msg.senderId === user.userId)}
+                lastMessage={lastMessages.find(
+                  (msg) =>
+                    msg.receiverId === user.userId ||
+                    msg.senderId === user.userId
+                )}
                 onSelect={() => handleSelectUser(user)}
                 key={user.userName + user.date}
                 user={user}
@@ -313,8 +329,11 @@ const Chat = () => {
                 width={50}
                 alt="Profile pic"
               />
-              <div className="username text-2xl font-bold">
-                {selectedUser.userName}
+              <div>
+                <div className="username text-2xl font-bold">
+                  {selectedUser.userName}
+                </div>
+                <div className="onlineStatus">{onlineUsers.includes(selectedUser.userId) ? "Online" : "Offline"}</div>
               </div>
             </div>
             <div className="flex justify-center items-center gap-4">

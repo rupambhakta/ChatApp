@@ -49,8 +49,11 @@ const UserDashboard = () => {
       const data = await response.json();
 
       if (response.ok) {
+        const user = JSON.parse(localStorage.getItem("user"));
+        user.profileImage = data.user.profileImage; // Update the user object with the new image URL
+        localStorage.setItem("user", JSON.stringify(user)); // Save the updated user object back to localStorage
         setMessage("Profile image updated successfully!");
-        navigate("/chat")
+        window.location.href = "/chat";
       } else {
         setMessage(data.message || "Error uploading image");
       }

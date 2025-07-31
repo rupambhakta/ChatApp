@@ -112,6 +112,8 @@ app.post("/login", async (req, res) => {
   // Convert to plain object and remove password
   const userInfo = user.toObject();
   delete userInfo.password;
+  console.log(userInfo);
+  
 
   res.json({ NexTalktoken, user: userInfo });
 });
@@ -317,7 +319,6 @@ app.get("/api/last-messages", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
