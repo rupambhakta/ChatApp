@@ -39,28 +39,32 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div>
-      <div className="flex h-screen justify-center items-center bg-gray-900">
-        <div className="w-1/2 mx-auto p-32 bg-gray-900 rounded-lg border-oragne-200 text-white">
-          <h2 className="text-3xl font-extrabold mb-6 text-center text-gray-100 ">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-900">
+      {/* Left: Form Section */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 sm:px-6 lg:px-20 py-10">
+        <div className="w-full max-w-md text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 text-center text-gray-100">
             Login
           </h2>
+
           {authError && (
             <div className="mb-3 text-center text-red-600 font-semibold">
               {authError}
             </div>
           )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
               login(userName, password);
             }}
+            className="space-y-4"
           >
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              className="p-3 border-2 border-gray-300 rounded w-full mb-4 focus:outline-focus focus:ring-2 focus:ring-gray-400"
+              className="p-3 border-2 border-gray-300 rounded w-full focus:outline-focus focus:ring-2 focus:ring-gray-400"
               placeholder="User Name"
             />
 
@@ -68,19 +72,20 @@ const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="p-3 border-2 border-gray-300 rounded w-full mb-4 focus:outline-focus focus:ring-2 focus:ring-gray-400"
+              className="p-3 border-2 border-gray-300 rounded w-full focus:outline-focus focus:ring-2 focus:ring-gray-400"
               placeholder="Password"
             />
 
             <button
               type="submit"
-              className="px-4 py-4 bg-orange-500 hover:bg-oragne-600 text-black rounded w-full transition-color-gray"
+              className="px-4 py-3 bg-orange-500 hover:bg-orange-600 text-black rounded w-full transition-colors duration-200"
             >
-              {authLoading ? "Loggin in...." : "Login"}
+              {authLoading ? "Logging in..." : "Login"}
             </button>
           </form>
-          <div className="mt-5 text-center text-gray-100">
-            Don't have an account?
+
+          <div className="mt-5 text-center text-sm sm:text-base text-gray-100">
+            Don't have an account?{" "}
             <Link to="/signup">
               <span className="text-orange-500 hover:underline font-semibold cursor-pointer">
                 Signup
@@ -88,14 +93,14 @@ const Login = () => {
             </Link>
           </div>
         </div>
-        <div className="w-1/2">
-          <AuthImagePattern
-            title={"Welcome back!"}
-            subtitle={
-              "Sign in to continue your conversations and catch up with your messages."
-            }
-          />
-        </div>
+      </div>
+
+      {/* Right: Auth Image Section */}
+      <div className="w-full lg:w-1/2 hidden lg:block">
+        <AuthImagePattern
+          title="Welcome back!"
+          subtitle="Sign in to continue your conversations and catch up with your messages."
+        />
       </div>
     </div>
   );

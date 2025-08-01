@@ -145,9 +145,9 @@ const Signup = () => {
 
   return (
     <div>
-      <div className="flex  bg-gray-900 h-screen">
-        <div className="w-1/2 mx-auto p-32 bg-gray-900 rounded-lg border-oragne-200 text-white">
-          <h2 className="text-3xl font-extrabold mb-6 text-center text-gray-100 ">
+      <div className="flex flex-col lg:flex-row bg-gray-900 min-h-screen">
+        <div className="w-full lg:w-1/2 p-6 sm:p-10 lg:p-32 text-white">
+          <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 text-center text-gray-100 ">
             Sign up
           </h2>
           <form
@@ -319,16 +319,16 @@ const Signup = () => {
               Submit
             </button>
           </form>
-          <div className="mt-5 text-center text-gray-100">
+          <div className="mt-4 text-center text-gray-100 text-sm sm:text-base">
             Already have an account?
             <Link to="/login">
-              <span className="text-orange-500 hover:underline font-semibold cursor-pointer">
+              <span className="text-orange-500 hover:underline font-semibold cursor-pointer ml-1">
                 Login
               </span>
             </Link>
           </div>
         </div>
-        <div className="w-1/2 max-h-3/5">
+        <div className="w-full lg:w-1/2 hidden lg:block">
           <AuthImagePattern
             title="Join our community"
             subtitle="Connect with friends, share moments, and stay in touch with your loved ones."
