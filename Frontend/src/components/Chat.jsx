@@ -71,7 +71,6 @@ const Chat = () => {
 
   const sendMessage = async (messageData) => {
     try {
-      console.log("Sending message:", messageData);
       socket.emit("chat message", messageData);
       // No need to emit getLastMessages here as we'll update the messages
       // when we receive the confirmatiFon via socket
@@ -90,7 +89,6 @@ const Chat = () => {
 
     // Subscribe to messages
     socket.on("chat message", (msg) => {
-      console.log("Received message:", msg);
       setMessages((prev) => {
         // Check if message already exists to prevent duplicates
         if (!prev.some((m) => m._id === msg._id)) {
@@ -198,7 +196,6 @@ const Chat = () => {
       if (expired) {
         localStorage.removeItem("NexTalktoken");
       } else {
-        console.log("Token is valid. Time left:", secondsLeft, "seconds");
         navigate("/chat");
       }
     }
@@ -236,9 +233,21 @@ const Chat = () => {
     }
   }, [searchTerm]);
 
-  const handleSelectUser = (user) => {
+  const handleSelectUser = async (user) => {
     setSelectedUser(user);
-    getMessages(user.userId);
+    try {
+      await axios.put(`${apiUrl}/api/mark-visited/${user.userId}`, null, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Then fetch messages and refresh last messages
+      getMessages(user.userId);
+      fetchLastMessages(); // To update green dot logic
+    } catch (error) {
+      console.error("Error marking messages as visited:", error);
+    }
     if (isMobileView) {
       setShowSidebar(false);
     }
@@ -346,6 +355,7 @@ const Chat = () => {
                 key={user.userName + user.date}
                 user={user}
                 selected={selectedUser?.userName === user.userName}
+                isActiveChat={selectedUser?.userName === user.userName}
               />
             ))}
           </div>
@@ -434,7 +444,7 @@ const Chat = () => {
                     >
                       <div className="flex-shrink-0">
                         <img
-                          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600"
+                          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600 overflow-hidden object-cover"
                           src={
                             message.senderId === user._id
                               ? formatImageUrl(user.profileImage)

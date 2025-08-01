@@ -19,7 +19,6 @@ function getReceiverSocketId(userId) {
 }
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
 
   socket.on("setup", (userId) => {
     userSocketMap[userId] = socket.id;
@@ -28,12 +27,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on('chat message', async (msg) => {
-    console.log("Received message:", msg);
     try {
       // Save message to DB
       const message = new Message(msg);
       const savedMessage = await message.save();
-      console.log("Message saved, emitting to:", msg.receiverId);
       
       // Emit to both sender and receiver
       io.to(getReceiverSocketId(msg.receiverId)).emit('chat message', savedMessage);

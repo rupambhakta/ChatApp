@@ -13,10 +13,10 @@ const formatDateOrTime = (dateString) => {
         .padStart(2, "0")}/${date.getFullYear()}`;
 };
 
-const UserInfo = ({ user, onSelect, selected, lastMessage }) => {
-  console.log("last message date: ", lastMessage?.createdAt);
-  
-  const formattedDate = formatDateOrTime(lastMessage?.createdAt ?? user.createdAt);
+const UserInfo = ({ user, onSelect, selected, lastMessage, isActiveChat }) => {
+  const formattedDate = formatDateOrTime(
+    lastMessage?.createdAt ?? user.createdAt
+  );
   const profileImage = user.image
     ? import.meta.env.VITE_API_URL + user.image
     : undefined;
@@ -44,9 +44,9 @@ const UserInfo = ({ user, onSelect, selected, lastMessage }) => {
       </div>
       <div className="flex flex-col justify-center items-center">
         <div>{formattedDate}</div>
-        <div className="border-2 border-gray-600 rounded-full aspect-square object-cover bg-green-600 text-center text-[12px]">
-          5
-        </div>
+        {lastMessage?.visited === false && !isActiveChat && (
+          <div className="border-2 p-1 border-gray-600 rounded-full aspect-square object-cover bg-green-600 text-center text-[12px]"></div>
+        )}
       </div>
     </div>
   );

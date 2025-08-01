@@ -9,11 +9,8 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const apiUrl = "http://localhost:5080";
 
-  // Get user data from localStorage
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  console.log(user);
   
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -136,17 +133,17 @@ const UserDashboard = () => {
                 <span>👤</span>
                 Full Name
               </div>
-              <p className="px-4 py-2.5 bg-gray-700 rounded-lg border border-gray-600">
+              <p className="px-4 py-2.5 bg-gray-700 text-gray-100 rounded-lg border border-gray-600">
                 {user.userName}
               </p>
             </div>
 
             <div className="space-y-1.5">
               <div className="text-sm text-gray-400 flex items-center gap-2">
-                <span>✉️</span>
+                <span>📧</span>
                 Email Address
               </div>
-              <p className="px-4 py-2.5 bg-gray-700 rounded-lg border border-gray-600">
+              <p className="px-4 py-2.5 text-gray-100 bg-gray-700 rounded-lg border border-gray-600">
                 {user.emailId}
               </p>
             </div>

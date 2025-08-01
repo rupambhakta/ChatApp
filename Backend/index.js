@@ -7,8 +7,7 @@ require("dotenv").config();
 const User = require("./models/SingUp");
 const Message = require("./models/messageSchema");
 const { io, getReceiverSocketId, server, app } = require("./lib/socket");
-// const app = express();
-const PORT = 5080;
+const PORT = process.env.PORT;
 
 // Configure multer for handling file uploads
 const storage = multer.diskStorage({
@@ -30,7 +29,7 @@ const upload = multer({
     cb(null, true);
   },
 });
-const MONGO = "mongodb://localhost:27017/contactdb";
+const MONGO = process.env.MONGO_URI;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -112,8 +111,6 @@ app.post("/login", async (req, res) => {
   // Convert to plain object and remove password
   const userInfo = user.toObject();
   delete userInfo.password;
-  console.log(userInfo);
-  
 
   res.json({ NexTalktoken, user: userInfo });
 });
@@ -264,9 +261,6 @@ app.get("/api/messages/:id", verifyToken, async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user.userId;
 
-    console.log(myId);
-    console.log(userToChatId);
-
     const messages = await Message.find({
       $or: [
         { senderId: myId, receiverId: userToChatId },
@@ -319,6 +313,25 @@ app.get("/api/last-messages", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+app.put("/api/mark-visited/:userId", verifyToken, async (req, res) => {
+  try {
+    const myId = req.user.userId;
+    const selectedUserId = req.params.userId;
+
+    await Message.findOneAndUpdate(
+      { senderId: selectedUserId, receiverId: myId, visited: false },
+      { $set: { visited: true } },
+      { sort: { createdAt: -1 } }
+    );
+
+    res.status(200).json({ message: "Messages marked as visited" });
+  } catch (error) {
+    console.error("Error marking messages as visited:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
