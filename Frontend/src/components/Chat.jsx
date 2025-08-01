@@ -155,7 +155,7 @@ const Chat = () => {
   const fetchSearchResults = async (term) => {
     try {
       const response = await axios.get(
-        `http://localhost:5080/users?search=${term}`,
+        `${apiUrl}/users?search=${term}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 const UserDashboard = () => {
   const [imageUrl, setImageUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
-  const apiUrl = "http://localhost:5080";
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   
@@ -40,7 +38,7 @@ const UserDashboard = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:5080/user", {
+      const response = await fetch(`${apiUrl}/user`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

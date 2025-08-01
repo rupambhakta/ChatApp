@@ -8,6 +8,7 @@ const User = require("./models/SingUp");
 const Message = require("./models/messageSchema");
 const { io, getReceiverSocketId, server, app } = require("./lib/socket");
 const PORT = process.env.PORT;
+const frontEndUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // Configure multer for handling file uploads
 const storage = multer.diskStorage({
@@ -36,7 +37,7 @@ const bcrypt = require("bcryptjs");
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [frontEndUrl],
     credentials: true,
   })
 );

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import AuthImagePattern from "./AuthImagePattern";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Login = () => {
   const [authError, setAuthError] = useState("");
@@ -13,7 +14,7 @@ const Login = () => {
     setAuthLoading(true);
     setAuthError("");
 
-    const responce = await fetch("http://localhost:5080/login", {
+    const responce = await fetch(`${apiUrl}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName: userName, password: password }),

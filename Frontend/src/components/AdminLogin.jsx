@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const AdminLogin = () => {
   const [authError, setAuthError] = useState("");
@@ -12,7 +13,7 @@ const AdminLogin = () => {
     setAuthLoading(true);
     setAuthError("");
 
-    const responce = await fetch("http://localhost:5080/admin/login", {
+    const responce = await fetch(`${apiUrl}/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName: userName, password: password }),

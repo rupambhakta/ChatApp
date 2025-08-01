@@ -34,12 +34,13 @@ const Dashboard = () => {
   const timeZone = "Asia/Kolkata";
   const todayDate = moment().tz(timeZone).format("YYYY-MM-DD");
   const [userCounts, setUserCounts] = useState({});
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   const fecthData = async (startDate, endDate) => {
     setLoading(true);
     try {
       const responce = await axios.post(
-        "http://localhost:5080/admin/dashboard",
+        `${apiUrl}/admin/dashboard`,
         {
           startDate: startDate,
           endDate: endDate,

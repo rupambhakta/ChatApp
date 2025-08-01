@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import AuthImagePattern from "./AuthImagePattern";
+const apiUrl = import.meta.env.VITE_API_URL;
 
 const Signup = () => {
   const [userName, setUserName] = useState();
@@ -14,6 +15,7 @@ const Signup = () => {
   const [isValidEmail, setIsValidEmail] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  
 
   const notify = () => toast("You are successfully registered!");
   const notifyUserExist = () => toast(addError);
@@ -108,7 +110,7 @@ const Signup = () => {
       return;
     }
     try {
-      const res = await fetch("http://localhost:5080/signup", {
+      const res = await fetch(`${apiUrl}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
