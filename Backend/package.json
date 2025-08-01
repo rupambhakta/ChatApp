@@ -5,8 +5,7 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "nodemon index.js"
   },
   "keywords": [],
   "author": "Ives van Hoorne",
