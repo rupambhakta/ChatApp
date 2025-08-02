@@ -2,6 +2,8 @@ import React from "react";
 
 const formatDateOrTime = (dateString) => {
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) return ""; // ⬅️ Handle invalid date
+
   const isToday = date.toDateString() === new Date().toDateString();
   return isToday
     ? `${date.getHours().toString().padStart(2, "0")}:${date
@@ -43,7 +45,7 @@ const UserInfo = ({ user, onSelect, selected, lastMessage, isActiveChat }) => {
         </div>
       </div>
       <div className="flex flex-col justify-center items-center">
-        <div>{formattedDate}</div>
+        <div>{formattedDate && <div>{formattedDate}</div>}</div>
         {lastMessage?.visited === false && !isActiveChat && (
           <div className="border-2 p-1 border-gray-600 rounded-full aspect-square object-cover bg-green-600 text-center text-[12px]"></div>
         )}
