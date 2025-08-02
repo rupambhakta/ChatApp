@@ -5,18 +5,132 @@ const UserDashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [selectedImg, setSelectedImg] = useState(null);
   const apiUrl = import.meta.env.VITE_API_URL;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+ const handleImageUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
   
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setImageUrl(URL.createObjectURL(file));
-      setMessage("");
+  const token = localStorage.getItem("NexTalktoken");
+  if (!token) {
+    setMessage("Please login first");
+    return;
+  }
+
+  // Add image size validation
+  if (file.size > 5 * 1024 * 1024) { // 5MB
+    setMessage("Image size must be less than 5MB");
+    return;
+  }
+
+  try {
+    setUploading(true);
+    setMessage("");
+    
+    // Function to resize image
+    const resizeImage = (file) => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Maximum dimensions
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Get the resized image as base64
+            const resizedImage = canvas.toDataURL('image/jpeg', 0.7); // Compress with 0.7 quality
+            resolve(resizedImage);
+          };
+        };
+      });
+    };
+
+    // Resize image before upload
+    const resizedImage = await resizeImage(file);
+    setSelectedImg(resizedImage);
+    
+    try {
+      const response = await fetch(`${apiUrl}/user`, {
+        method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ image: resizedImage }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data && data.success && data.user) {
+        const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+        const updatedUser = {
+          ...currentUser,
+          profileImage: data.user.profileImage
+        };
+        
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setMessage("Profile image updated successfully");
+        
+        setTimeout(() => {
+          window.location.href = "/chat";
+        }, 1000);
+      } else {
+        throw new Error("Invalid server response");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessage(error.message || "Error uploading image");
     }
-  };
+  } catch (error) {
+    console.error("Error processing image:", error);
+    setMessage("Error processing image");
+  } finally {
+    setUploading(false);
+  }
+};
+  // const handleImageChange = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setSelectedFile(file);
+  //     setImageUrl(URL.createObjectURL(file));
+  //     setMessage("");
+  //   }
+  // };
 
   const handleUpload = async () => {
     if (!selectedFile) {
@@ -78,7 +192,11 @@ const UserDashboard = () => {
           <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <img
-                src={user.profileImage ? `${apiUrl}${user.profileImage}` : "/user.png"}
+                src={
+    user.profileImage?.startsWith('http') 
+      ? user.profileImage 
+      : "/user.png"
+  }
                 alt="Profile"
                 className="w-32 h-32 rounded-full object-cover border-4 border-gray-700"
               />
@@ -98,13 +216,15 @@ const UserDashboard = () => {
                   id="avatar-upload"
                   className="hidden"
                   accept="image/*"
-                  onChange={handleImageChange}
+                  onChange={handleImageUpload}
                   disabled={uploading}
                 />
               </label>
             </div>
             <p className="text-sm text-gray-400">
-              {uploading ? "Uploading..." : "Click the camera icon to update your photo"}
+              {uploading
+                ? "Uploading..."
+                : "Click the camera icon to update your photo"}
             </p>
 
             {imageUrl && (
@@ -118,7 +238,13 @@ const UserDashboard = () => {
             )}
 
             {message && (
-              <div className={`text-sm ${message.includes("success") ? "text-green-400" : "text-red-400"}`}>
+              <div
+                className={`text-sm ${
+                  message.includes("success")
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
                 {message}
               </div>
             )}
@@ -149,12 +275,16 @@ const UserDashboard = () => {
 
           {/* Account Information */}
           <div className="mt-6 bg-gray-700 rounded-xl p-6">
-            <h2 className="text-lg font-medium text-white mb-4">Account Information</h2>
+            <h2 className="text-lg font-medium text-white mb-4">
+              Account Information
+            </h2>
             <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between py-2 border-b border-gray-600">
                 <span className="text-gray-300">Member Since</span>
                 <span className="text-gray-300">
-                  {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                  {user.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString()
+                    : "N/A"}
                 </span>
               </div>
               <div className="flex items-center justify-between py-2">

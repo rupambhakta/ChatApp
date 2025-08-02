@@ -18,7 +18,7 @@ const UserInfo = ({ user, onSelect, selected, lastMessage, isActiveChat }) => {
     lastMessage?.createdAt ?? user.createdAt
   );
   const profileImage = user.image
-    ? import.meta.env.VITE_API_URL + user.image
+    ?  user.image
     : undefined;
 
   return (

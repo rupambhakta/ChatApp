@@ -9,6 +9,7 @@ const Message = require("./models/messageSchema");
 const { io, getReceiverSocketId, server, app } = require("./lib/socket");
 const PORT = process.env.PORT;
 const frontEndUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+const cloudinary = require("./lib/cloudinary");
 
 // Configure multer for handling file uploads
 const storage = multer.diskStorage({
@@ -34,10 +35,15 @@ const MONGO = process.env.MONGO_URI;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-app.use(express.json());
+app.use(express.json({ limit: '7mb' }));
+app.use(express.urlencoded({ extended: true, limit: '7mb' }));
 app.use(
   cors({
     origin: [frontEndUrl],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    maxAge: 86400,
     credentials: true,
   })
 );
@@ -188,63 +194,56 @@ app.get("/users", verifyToken, async (req, res) => {
   }
 });
 
-app.put(
-  "/user",
-  verifyToken,
-  upload.single("profileImage"),
-  async (req, res) => {
-    const fs = require("fs");
-    try {
-      const userId = req.user.userId;
-      // Find the user first
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
+app.put("/user", verifyToken, async (req, res) => {
+  try {
+    const { image } = req.body;
+    const userId = req.user.userId;
 
-      // Create update object
-      const updateData = {};
-
-      // If there's a file, delete the old image if it exists
-      if (req.file) {
-        if (user.profileImage) {
-          const oldImagePath = user.profileImage.startsWith("/")
-            ? user.profileImage.slice(1)
-            : user.profileImage;
-          const fullPath = require("path").join(__dirname, oldImagePath);
-          fs.unlink(fullPath, (err) => {
-            if (err) {
-              console.error("Error deleting old image:", err.message);
-            }
-          });
-        }
-        updateData.profileImage = `/images/${req.file.filename}`;
-      }
-
-      // Add any other fields from req.body to updateData
-      if (req.body.userName) updateData.userName = req.body.userName;
-      if (req.body.emailId) updateData.emailId = req.body.emailId;
-      if (req.body.mobileNumber)
-        updateData.mobileNumber = req.body.mobileNumber;
-
-      // Update user
-      const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-        new: true,
-        runValidators: true,
-      });
-
-      res.json({
-        message: "User updated successfully",
-        user: updatedUser,
-      });
-    } catch (error) {
-      console.error(error);
-      res
-        .status(500)
-        .json({ message: "Error updating user", error: error.message });
+    if (!image) {
+      return res.status(400).json({ message: "Profile image is required" });
     }
+
+    // Validate base64 image size (5MB)
+    const base64Size = Buffer.from(image.split(',')[1], 'base64').length;
+    if (base64Size > 5 * 1024 * 1024) { // 5MB limit
+      return res.status(413).json({ message: "Image size must be less than 5MB" });
+    }
+
+    // Upload to Cloudinary with optimization
+    const uploadResponse = await cloudinary.uploader.upload(image, {
+      folder: 'profile_images',
+      transformation: [
+        { width: 800, height: 800, crop: 'limit' },
+        { quality: 'auto' }
+      ]
+    });
+
+    // Update user with the image URL
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profileImage: uploadResponse.secure_url },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile image updated successfully",
+      user: updatedUser
+    });
+
+  } catch (error) {
+    console.error("Error in update profile:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Error uploading image",
+      error: error.message 
+    });
   }
-);
+});
 
 // Serve images statically
 app.use("/images", express.static("images"));
@@ -332,7 +331,6 @@ app.put("/api/mark-visited/:userId", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-
 
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);

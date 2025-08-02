@@ -281,7 +281,7 @@ const Chat = () => {
 
   const formatImageUrl = (imageUrl) => {
     if (imageUrl) {
-      return apiUrl + imageUrl;
+      return imageUrl;
     } else {
       return "/user.png";
     }
@@ -386,7 +386,7 @@ const Chat = () => {
                 className="border-2 border-gray-600 rounded-full aspect-square object-cover w-10 h-10 md:w-12 md:h-12"
                 src={
                   selectedUser.image
-                    ? `${import.meta.env.VITE_API_URL + selectedUser.image}`
+                    ? `${selectedUser.image}`
                     : "/user.png"
                 }
                 alt="Profile pic"
