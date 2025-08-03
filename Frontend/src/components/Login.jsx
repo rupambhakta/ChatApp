@@ -26,7 +26,7 @@ const Login = () => {
     if (data.NexTalktoken) {
       localStorage.setItem("NexTalktoken", data.NexTalktoken);
       localStorage.setItem("user", JSON.stringify(data.user));
-      navigate("/chat");
+       window.location.href = "/chat";
     } else {
       setAuthError(data.message || "Login Failed");
     }
