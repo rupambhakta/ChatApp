@@ -19,3 +19,7 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #3a3a3a;
 }
+
+.nav-bg-gray-850 {
+  background-color: var(--gray-850) !important;
+}
