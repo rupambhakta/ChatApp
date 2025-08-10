@@ -398,7 +398,7 @@ const Chat = () => {
             isMobileView && showSidebar ? "hidden" : "block"
           }`}
         >
-          <nav className="flex items-center justify-between h-[64px] border-b-2 border-black bg-gray-850 sticky top-0 z-20">
+          <nav className="flex items-center justify-between h-[64px] border-b-2 border-black bg-gray-850 sticky top-0 z-20 ckdrop-blur-sm">
             <div className="image flex justify-center items-center gap-3 p-2">
               {isMobileView && (
                 <button
