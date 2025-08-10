@@ -341,7 +341,7 @@ const Chat = () => {
           isMobileView && !showSidebar ? "hidden" : "block"
         }`}
       >
-        <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 nav-bg-gray-850 px-4">
+        <nav className="flex justify-between items-center h-[64px] border-b-2 border-black sticky top-0 z-10 bg-gray-900 px-4">
           <h1 className="w-1/3 font-extrabold text-xl md:text-3xl select-none text-orange-500">
             NexTalk
           </h1>
@@ -398,7 +398,7 @@ const Chat = () => {
             isMobileView && showSidebar ? "hidden" : "block"
           }`}
         >
-          <nav className="nav-bg-gray-850 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0  ckdrop-blur-sm"
+          <nav className="bg-gray-900 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0  ckdrop-blur-sm"
           >
             <div className="image flex justify-center items-center gap-3 p-2">
               {isMobileView && (
