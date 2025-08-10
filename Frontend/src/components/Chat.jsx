@@ -498,7 +498,7 @@ const Chat = () => {
                             />
                           )}
                           {message.text && (
-                            <p className="break-words">{message.text}</p>
+                            <p className="break-words whitespace-pre-wrap">{message.text}</p>
                           )}
                         </div>
                         <span className="text-xs text-gray-400 mt-1">
