@@ -154,14 +154,11 @@ const Chat = () => {
 
   const fetchSearchResults = async (term) => {
     try {
-      const response = await axios.get(
-        `${apiUrl}/users?search=${term}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${apiUrl}/users?search=${term}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setFilteredUsers(response.data);
     } catch (error) {
       console.error("Error fetching search results:", error);
@@ -236,11 +233,16 @@ const Chat = () => {
   const handleSelectUser = async (user) => {
     setSelectedUser(user);
     try {
-      await axios.put(`${apiUrl}/api/mark-visited/${user.userId}`, null, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.put(
+        `${apiUrl}/api/mark-visited/${user.userId}`,
+        null,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("Modified Count:", response.data.modifiedCount);
 
       // Then fetch messages and refresh last messages
       getMessages(user.userId);
@@ -384,11 +386,7 @@ const Chat = () => {
               )}
               <img
                 className="border-2 border-gray-600 rounded-full aspect-square object-cover w-10 h-10 md:w-12 md:h-12"
-                src={
-                  selectedUser.image
-                    ? `${selectedUser.image}`
-                    : "/user.png"
-                }
+                src={selectedUser.image ? `${selectedUser.image}` : "/user.png"}
                 alt="Profile pic"
               />
               <div>

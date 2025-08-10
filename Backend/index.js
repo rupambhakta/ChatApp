@@ -319,13 +319,22 @@ app.put("/api/mark-visited/:userId", verifyToken, async (req, res) => {
     const myId = req.user.userId;
     const selectedUserId = req.params.userId;
 
-    await Message.findOneAndUpdate(
-      { senderId: selectedUserId, receiverId: myId, visited: false },
-      { $set: { visited: true } },
-      { sort: { createdAt: -1 } }
+    // Update ALL unvisited messages from the selected user to the current user
+    const result = await Message.updateMany(
+      { 
+        senderId: selectedUserId, 
+        receiverId: myId, 
+        visited: false 
+      },
+      { 
+        $set: { visited: true } 
+      }
     );
 
-    res.status(200).json({ message: "Messages marked as visited" });
+    res.status(200).json({ 
+      message: "Messages marked as visited",
+      modifiedCount: result.modifiedCount
+    });
   } catch (error) {
     console.error("Error marking messages as visited:", error);
     res.status(500).json({ error: "Internal server error" });
