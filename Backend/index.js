@@ -300,10 +300,29 @@ app.get("/api/last-messages", verifyToken, async (req, res) => {
             ],
           },
           lastMessage: { $first: "$$ROOT" },
+          // Count unread messages where I'm the receiver and message is unvisited
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$receiverId", new mongoose.Types.ObjectId(myId)] },
+                    { $eq: ["$visited", false] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
         },
       },
       {
-        $replaceRoot: { newRoot: "$lastMessage" },
+        $replaceRoot: { 
+          newRoot: { 
+            $mergeObjects: ["$lastMessage", { unreadCount: "$unreadCount" }] 
+          } 
+        },
       },
     ]);
 
