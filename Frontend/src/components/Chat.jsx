@@ -306,6 +306,30 @@ const Chat = () => {
     resetTextareaHeight();
   };
 
+  const getSortedUsers = () => {
+    if (searchTerm.trim() !== "") {
+      // If searching, return filtered results as is
+      return filteredUsers;
+    }
+
+    // Create a map of userId to last message time for quick lookup
+    const lastMessageMap = {};
+    lastMessages.forEach((msg) => {
+      const otherUserId =
+        msg.senderId === user._id ? msg.receiverId : msg.senderId;
+      lastMessageMap[otherUserId] = new Date(msg.createdAt).getTime();
+    });
+
+    // Sort users based on last message time
+    const sortedUsers = [...users].sort((a, b) => {
+      const timeA = lastMessageMap[a.userId] || 0;
+      const timeB = lastMessageMap[b.userId] || 0;
+      return timeB - timeA; // Most recent first (descending order)
+    });
+
+    return sortedUsers;
+  };
+
   return (
     <div className="bg-gray-900 h-screen text-white flex">
       {/* User Information Section */}
@@ -346,7 +370,7 @@ const Chat = () => {
           <SidebarSkleton />
         ) : (
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {filteredUsers.map((user) => (
+            {getSortedUsers().map((user) => (
               <UserInfo
                 lastMessage={lastMessages.find(
                   (msg) =>
