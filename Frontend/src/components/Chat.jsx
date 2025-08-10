@@ -335,7 +335,7 @@ const Chat = () => {
       {/* User Information Section */}
       <div
         id="userInfo"
-        className={`bg-gray-850 ${
+        className={`bg-gray-900 ${
           isMobileView ? "w-full absolute z-20" : "w-1/3"
         } border-r-2 border-black h-screen flex flex-col ${
           isMobileView && !showSidebar ? "hidden" : "block"
@@ -398,7 +398,7 @@ const Chat = () => {
             isMobileView && showSidebar ? "hidden" : "block"
           }`}
         >
-          <nav className="bg-gray-900 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0  ckdrop-blur-sm"
+          <nav className="bg-gray-900 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0 z-10"
           >
             <div className="image flex justify-center items-center gap-3 p-2">
               {isMobileView && (
@@ -513,7 +513,7 @@ const Chat = () => {
             )}
           </div>
 
-          <div className="sendMessage sticky bottom-0 bg-gray-850 px-2 md:px-4 py-2 flex justify-center items-center gap-2 border-t-2 border-black">
+          <div className="sendMessage sticky bottom-0 bg-gray-900 px-2 md:px-4 py-2 flex justify-center items-center gap-2 border-t-2 border-black">
             <div className="flex justify-center items-center hover:bg-gray-800 p-2 rounded-lg transition-colors relative">
               <img
                 src="/emoji2.png"
@@ -569,7 +569,7 @@ const Chat = () => {
         </div>
       ) : (
         <div
-          className={`bg-gray-850 ${
+          className={`bg-gray-900 ${
             isMobileView ? "w-full absolute z-10" : "w-2/3"
           } flex flex-col h-screen ${
             isMobileView && showSidebar ? "hidden" : "block"
