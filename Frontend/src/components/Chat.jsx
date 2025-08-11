@@ -83,40 +83,41 @@ const Chat = () => {
 
   // Replace the existing socket event handler in your Chat.jsx useEffect
 
-useEffect(() => {
-  // Setup socket connection with user ID
-  if (user?._id) {
-    socket.emit("setup", user._id);
-  }
-
-  // Subscribe to messages
-  socket.on("chat message", (msg) => {
-    // Only update messages state if the message is relevant to the current chat
-    if (selectedUser) {
-      const isRelevantToCurrentChat = 
-        (msg.senderId === user._id && msg.receiverId === selectedUser.userId) ||
-        (msg.senderId === selectedUser.userId && msg.receiverId === user._id);
-      
-      if (isRelevantToCurrentChat) {
-        setMessages((prev) => {
-          // Check if message already exists to prevent duplicates
-          if (!prev.some((m) => m._id === msg._id)) {
-            return [...prev, msg];
-          }
-          return prev;
-        });
-      }
+  useEffect(() => {
+    // Setup socket connection with user ID
+    if (user?._id) {
+      socket.emit("setup", user._id);
     }
-    
-    // Always update last messages regardless of current chat
-    fetchLastMessages();
-  });
 
-  // Cleanup function to remove event listeners
-  return () => {
-    socket.off("chat message");
-  };
-}, [user?._id, selectedUser?.userId]); // Add selectedUser.userId to dependencies
+    // Subscribe to messages
+    socket.on("chat message", (msg) => {
+      // Only update messages state if the message is relevant to the current chat
+      if (selectedUser) {
+        const isRelevantToCurrentChat =
+          (msg.senderId === user._id &&
+            msg.receiverId === selectedUser.userId) ||
+          (msg.senderId === selectedUser.userId && msg.receiverId === user._id);
+
+        if (isRelevantToCurrentChat) {
+          setMessages((prev) => {
+            // Check if message already exists to prevent duplicates
+            if (!prev.some((m) => m._id === msg._id)) {
+              return [...prev, msg];
+            }
+            return prev;
+          });
+        }
+      }
+
+      // Always update last messages regardless of current chat
+      fetchLastMessages();
+    });
+
+    // Cleanup function to remove event listeners
+    return () => {
+      socket.off("chat message");
+    };
+  }, [user?._id, selectedUser?.userId]); // Add selectedUser.userId to dependencies
 
   useEffect(() => {
     socket.on("getOnlineUsers", (onlineUsers) => {
@@ -411,8 +412,7 @@ useEffect(() => {
             isMobileView && showSidebar ? "hidden" : "block"
           }`}
         >
-          <nav className="bg-gray-900 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0 z-10"
-          >
+          <nav className="bg-gray-900 flex items-center justify-between h-[64px] border-b-2 border-black  sticky top-0 z-10">
             <div className="image flex justify-center items-center gap-3 p-2">
               {isMobileView && (
                 <button
@@ -461,86 +461,105 @@ useEffect(() => {
             {messageLoading ? (
               <MessageSkeleton />
             ) : (
-              // Replace your message rendering section in Chat.jsx with this improved version
+              <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 custom-scrollbar">
+                {messages.map((message, index) => (
+                  <div
+                    key={message._id}
+                    className={`flex ${
+                      message.senderId === user._id
+                        ? "justify-end"
+                        : "justify-start"
+                    } mb-4 animate-fade-in`}
+                    style={{
+                      animationDelay: `${index * 0.1}s`,
+                    }}
+                  >
+                    <div
+                      className={`flex ${
+                        message.senderId === user._id
+                          ? "flex-row-reverse"
+                          : "flex-row"
+                      } items-end gap-3 max-w-[85%] md:max-w-[70%] group`}
+                    >
+                      {/* Profile Image with Status Ring */}
+                      <div className="flex-shrink-0 relative">
+                        <div className="relative">
+                          <img
+                            className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-gray-600 overflow-hidden object-cover shadow-lg transition-transform duration-200 group-hover:scale-110"
+                            src={
+                              message.senderId === user._id
+                                ? formatImageUrl(user.profileImage)
+                                : formatImageUrl(selectedUser.image)
+                            }
+                            alt="profile pic"
+                          />
+                          {/* Online status indicator */}
+                          {message.senderId !== user._id &&
+                            onlineUsers.includes(selectedUser?.userId) && (
+                              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-gray-900 animate-pulse"></div>
+                            )}
+                        </div>
+                      </div>
 
-<div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 custom-scrollbar">
-  {messages.map((message) => (
-    <div
-      key={message._id}
-      className={`flex ${
-        message.senderId === user._id
-          ? "justify-end"
-          : "justify-start"
-      } mb-4`}
-    >
-      <div
-        className={`flex ${
-          message.senderId === user._id
-            ? "flex-row-reverse"
-            : "flex-row"
-        } items-end gap-2 max-w-[90%] md:max-w-[70%]`} // Reduced max-width for better wrapping
-      >
-        <div className="flex-shrink-0">
-          <img
-            className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600 overflow-hidden object-cover"
-            src={
-              message.senderId === user._id
-                ? formatImageUrl(user.profileImage)
-                : formatImageUrl(selectedUser.image)
-            }
-            alt="profile pic"
-          />
-        </div>
-        <div
-          className={`flex flex-col ${
-            message.senderId === user._id
-              ? "items-end"
-              : "items-start"
-          }`}
-        >
-          <div
-            className={`p-2 md:p-3 rounded-lg text-sm md:text-base min-w-0 max-w-full ${
-              message.senderId === user._id
-                ? "bg-blue-600 text-white rounded-br-none"
-                : "bg-gray-700 text-white rounded-bl-none"
-            }`}
-            style={{
-              wordWrap: 'break-word',
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
-              hyphens: 'auto'
-            }}
-          >
-            {message.image && (
-              <img
-                src={message.image}
-                alt="Attachment"
-                className="max-w-[150px] md:max-w-[200px] rounded-md mb-2 block"
-              />
-            )}
-            {message.text && (
-              <p 
-                className="break-words whitespace-pre-wrap leading-relaxed"
-                style={{
-                  wordWrap: 'break-word',
-                  wordBreak: 'break-word',
-                  overflowWrap: 'anywhere', // This will break even long words
-                  maxWidth: '100%'
-                }}
-              >
-                {message.text}
-              </p>
-            )}
-          </div>
-          <span className="text-xs text-gray-400 mt-1">
-            {formatMessageTime(message.createdAt)}
-          </span>
-        </div>
-      </div>
-    </div>
-  ))}
-  <div ref={messagesEndRef} />
-</div>
+                      {/* Message Content */}
+                      <div
+                        className={`flex flex-col ${
+                          message.senderId === user._id
+                            ? "items-end"
+                            : "items-start"
+                        }`}
+                      >
+                        {/* Message Bubble */}
+                        <div
+                          className={`relative px-3 md:px-4 py-2 md:py-3 rounded-2xl text-sm md:text-base min-w-0 max-w-full shadow-lg backdrop-blur-sm border transition-all duration-300 hover:shadow-xl hover:scale-[1.02] ${
+                            message.senderId === user._id
+                              ? "bg-gradient-to-br from-blue-600 via-blue-700 to-blue-800 text-white border-blue-400/30 shadow-blue-500/20"
+                              : "bg-gradient-to-br from-gray-700 via-gray-800 to-gray-900 text-white border-gray-600/30 shadow-gray-800/50"
+                          }`}
+                          style={{
+                            wordWrap: "break-word",
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                          }}
+                        >
+                          {/* Image content */}
+                          {message.image && (
+                            <div className="relative mb-2 group">
+                              <img
+                                src={message.image}
+                                alt="Attachment"
+                                className="max-w-[200px] md:max-w-[280px] rounded-xl shadow-md transition-transform duration-300 hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                            </div>
+                          )}
+
+                          {/* Text content */}
+                          {message.text && (
+                            <p
+                              className="break-words whitespace-pre-wrap leading-relaxed relative z-10"
+                              style={{
+                                wordWrap: "break-word",
+                                wordBreak: "break-word",
+                                overflowWrap: "anywhere",
+                                maxWidth: "100%",
+                              }}
+                            >
+                              {message.text}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Simple timestamp */}
+                        <span className="text-xs text-gray-400 mt-1">
+                          {formatMessageTime(message.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
             )}
           </div>
 
