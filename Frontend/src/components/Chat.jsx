@@ -81,29 +81,42 @@ const Chat = () => {
     }
   };
 
-  useEffect(() => {
-    // Setup socket connection with user ID
-    if (user?._id) {
-      socket.emit("setup", user._id);
+  // Replace the existing socket event handler in your Chat.jsx useEffect
+
+useEffect(() => {
+  // Setup socket connection with user ID
+  if (user?._id) {
+    socket.emit("setup", user._id);
+  }
+
+  // Subscribe to messages
+  socket.on("chat message", (msg) => {
+    // Only update messages state if the message is relevant to the current chat
+    if (selectedUser) {
+      const isRelevantToCurrentChat = 
+        (msg.senderId === user._id && msg.receiverId === selectedUser.userId) ||
+        (msg.senderId === selectedUser.userId && msg.receiverId === user._id);
+      
+      if (isRelevantToCurrentChat) {
+        setMessages((prev) => {
+          // Check if message already exists to prevent duplicates
+          if (!prev.some((m) => m._id === msg._id)) {
+            return [...prev, msg];
+          }
+          return prev;
+        });
+      }
     }
+    
+    // Always update last messages regardless of current chat
+    fetchLastMessages();
+  });
 
-    // Subscribe to messages
-    socket.on("chat message", (msg) => {
-      setMessages((prev) => {
-        // Check if message already exists to prevent duplicates
-        if (!prev.some((m) => m._id === msg._id)) {
-          return [...prev, msg];
-        }
-        return prev;
-      });
-      fetchLastMessages();
-    });
-
-    // Cleanup function to remove event listeners
-    return () => {
-      socket.off("chat message");
-    };
-  }, [user?._id]); // Only re-run when user ID changes
+  // Cleanup function to remove event listeners
+  return () => {
+    socket.off("chat message");
+  };
+}, [user?._id, selectedUser?.userId]); // Add selectedUser.userId to dependencies
 
   useEffect(() => {
     socket.on("getOnlineUsers", (onlineUsers) => {
