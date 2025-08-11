@@ -461,68 +461,86 @@ useEffect(() => {
             {messageLoading ? (
               <MessageSkeleton />
             ) : (
-              <div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 custom-scrollbar">
-                {messages.map((message) => (
-                  <div
-                    key={message._id}
-                    className={`flex ${
-                      message.senderId === user._id
-                        ? "justify-end"
-                        : "justify-start"
-                    } mb-4`}
-                  >
-                    <div
-                      className={`flex ${
-                        message.senderId === user._id
-                          ? "flex-row-reverse"
-                          : "flex-row"
-                      } items-end gap-2 max-w-[90%] md:max-w-[80%]`}
-                    >
-                      <div className="flex-shrink-0">
-                        <img
-                          className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600 overflow-hidden object-cover"
-                          src={
-                            message.senderId === user._id
-                              ? formatImageUrl(user.profileImage)
-                              : formatImageUrl(selectedUser.image)
-                          }
-                          alt="profile pic"
-                        />
-                      </div>
-                      <div
-                        className={`flex flex-col ${
-                          message.senderId === user._id
-                            ? "items-end"
-                            : "items-start"
-                        }`}
-                      >
-                        <div
-                          className={`p-2 md:p-3 rounded-lg text-sm md:text-base ${
-                            message.senderId === user._id
-                              ? "bg-blue-600 text-white rounded-br-none"
-                              : "bg-gray-700 text-white rounded-bl-none"
-                          }`}
-                        >
-                          {message.image && (
-                            <img
-                              src={message.image}
-                              alt="Attachment"
-                              className="max-w-[150px] md:max-w-[200px] rounded-md mb-2"
-                            />
-                          )}
-                          {message.text && (
-                            <p className="break-words whitespace-pre-wrap">{message.text}</p>
-                          )}
-                        </div>
-                        <span className="text-xs text-gray-400 mt-1">
-                          {formatMessageTime(message.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+              // Replace your message rendering section in Chat.jsx with this improved version
+
+<div className="flex-1 overflow-y-auto p-2 md:p-4 space-y-4 custom-scrollbar">
+  {messages.map((message) => (
+    <div
+      key={message._id}
+      className={`flex ${
+        message.senderId === user._id
+          ? "justify-end"
+          : "justify-start"
+      } mb-4`}
+    >
+      <div
+        className={`flex ${
+          message.senderId === user._id
+            ? "flex-row-reverse"
+            : "flex-row"
+        } items-end gap-2 max-w-[90%] md:max-w-[70%]`} // Reduced max-width for better wrapping
+      >
+        <div className="flex-shrink-0">
+          <img
+            className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-gray-600 overflow-hidden object-cover"
+            src={
+              message.senderId === user._id
+                ? formatImageUrl(user.profileImage)
+                : formatImageUrl(selectedUser.image)
+            }
+            alt="profile pic"
+          />
+        </div>
+        <div
+          className={`flex flex-col ${
+            message.senderId === user._id
+              ? "items-end"
+              : "items-start"
+          }`}
+        >
+          <div
+            className={`p-2 md:p-3 rounded-lg text-sm md:text-base min-w-0 max-w-full ${
+              message.senderId === user._id
+                ? "bg-blue-600 text-white rounded-br-none"
+                : "bg-gray-700 text-white rounded-bl-none"
+            }`}
+            style={{
+              wordWrap: 'break-word',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+              hyphens: 'auto'
+            }}
+          >
+            {message.image && (
+              <img
+                src={message.image}
+                alt="Attachment"
+                className="max-w-[150px] md:max-w-[200px] rounded-md mb-2 block"
+              />
+            )}
+            {message.text && (
+              <p 
+                className="break-words whitespace-pre-wrap leading-relaxed"
+                style={{
+                  wordWrap: 'break-word',
+                  wordBreak: 'break-word',
+                  overflowWrap: 'anywhere', // This will break even long words
+                  maxWidth: '100%'
+                }}
+              >
+                {message.text}
+              </p>
+            )}
+          </div>
+          <span className="text-xs text-gray-400 mt-1">
+            {formatMessageTime(message.createdAt)}
+          </span>
+        </div>
+      </div>
+    </div>
+  ))}
+  <div ref={messagesEndRef} />
+</div>
             )}
           </div>
 
