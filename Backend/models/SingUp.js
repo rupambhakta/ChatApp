@@ -6,7 +6,12 @@ const userSchema = new mongoose.Schema(
     emailId: { type: String, required: true },
     mobileNumber: { type: String, required: true },
     password: { type: String, required: true },
-    profileImage: { type: String }
+    profileImage: { type: String },
+
+    emailVerified: { type: Boolean, default: false },
+    otpHash: { type: String },
+    otpExpires: { type: Date },
+    lastOtpSentAt: { type: Date }
   },
   { timestamps: true }
 );

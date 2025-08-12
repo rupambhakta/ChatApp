@@ -8,6 +8,7 @@ import Chat from "./components/Chat";
 import Dashboard from "./components/Dashboard";
 import AdminLogin from "./components/AdminLogin";
 import UserDashboard from "./components/UserDashboard";
+import VerifyOtp from "./components/VerifyOtp";
 
 function App() {
   const router = createBrowserRouter([
@@ -16,34 +17,40 @@ function App() {
       element: <Home />,
     },
     {
-      path:"/signup",
-      element:<Signup/>
+      path: "/signup",
+      element: <Signup />,
     },
     {
-      path:"/login",
-      element:<Login/>
+      path: "/verify-otp",
+      element: <VerifyOtp />,
+    },
+    {
+      path: "/login",
+      element: <Login />,
     },
     {
       path: "/chat",
-      element: <Chat />
+      element: <Chat />,
     },
     {
-      path:"/chat/dashboard",
-      element:<UserDashboard/>
+      path: "/chat/dashboard",
+      element: <UserDashboard />,
     },
     {
-      path:"/admin/dashboard",
-      element:<Dashboard/>
+      path: "/admin/dashboard",
+      element: <Dashboard />,
     },
     {
-      path:"/admin/login",
-      element:<AdminLogin/>
-    }
+      path: "/admin/login",
+      element: <AdminLogin />,
+    },
   ]);
 
-  return <>
-  <RouterProvider router={router}/>
-  </>;
+  return (
+    <>
+      <RouterProvider router={router} />
+    </>
+  );
 }
 
 export default App;

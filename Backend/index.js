@@ -10,27 +10,8 @@ const { io, getReceiverSocketId, server, app } = require("./lib/socket");
 const PORT = process.env.PORT;
 const frontEndUrl = process.env.FRONTEND_URL || "http://localhost:5173";
 const cloudinary = require("./lib/cloudinary");
+const nodemailer = require("nodemailer");
 
-// Configure multer for handling file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "images/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-      return cb(new Error("Only image files are allowed!"), false);
-    }
-    cb(null, true);
-  },
-});
 const MONGO = process.env.MONGO_URI;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -47,6 +28,30 @@ app.use(
     credentials: true,
   })
 );
+
+//For Email verification
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || "smtp.gmail.com",
+  port: Number(process.env.EMAIL_PORT) || 587,
+  secure: process.env.EMAIL_SECURE === "true",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit string
+}
+async function sendOtpEmail(to, otp) {
+  await transporter.sendMail({
+    from: `"NexTalk" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: "Your NexTalk verification code",
+    text: `Your verification code is ${otp}. It will expire in 5 minutes.`,
+  });
+}
+
 
 // JWT verification middleware
 const verifyToken = (req, res, next) => {
@@ -81,29 +86,106 @@ app.post("/signup", async (req, res) => {
     if (!userName || !emailId || !mobileNumber || !password) {
       return res.status(400).json({ error: "All fields are required" });
     }
+
     // Check if either email or mobile number already exists
-    const user = await User.findOne({ $or: [{ emailId }, { mobileNumber }] });
-    if (user) {
+    const existing = await User.findOne({ $or: [{ emailId }, { mobileNumber }] });
+    if (existing) {
       return res.status(409).json({
         exists: true,
         message: "User already exists with this email or mobile number",
       });
     }
-    const hashed = await bcrypt.hash(password, 10);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // create OTP and hash it
+    const otp = generateOTP();
+    const otpHash = await bcrypt.hash(otp, 10);
+    const otpExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
+
     const newUser = new User({
       userName,
       emailId,
       mobileNumber,
-      password: hashed,
+      password: hashedPassword,
+      emailVerified: false,
+      otpHash,
+      otpExpires,
+      lastOtpSentAt: Date.now(),
       date: Date.now(),
     });
+
     await newUser.save();
-    res.status(201).json(newUser);
+
+    // send OTP email (do not include OTP in response)
+    await sendOtpEmail(emailId, otp);
+
+    res.status(201).json({ message: "OTP sent to email", emailId: newUser.emailId });
   } catch (error) {
-    console.error(error);
+    console.error("Signup error:", error);
     res.status(500).json({ error: "Server error" });
   }
 });
+
+app.post("/verify-otp", async (req, res) => {
+  try {
+    const { emailId, otp } = req.body;
+    if (!emailId || !otp) return res.status(400).json({ message: "emailId and otp required" });
+
+    const user = await User.findOne({ emailId });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    if (user.emailVerified) return res.status(400).json({ message: "Email already verified" });
+
+    if (!user.otpHash || !user.otpExpires || Date.now() > user.otpExpires) {
+      return res.status(400).json({ message: "OTP expired. Please request a new one." });
+    }
+
+    const match = await bcrypt.compare(otp, user.otpHash);
+    if (!match) return res.status(400).json({ message: "Invalid OTP" });
+
+    user.emailVerified = true;
+    user.otpHash = undefined;
+    user.otpExpires = undefined;
+    user.lastOtpSentAt = undefined;
+    await user.save();
+
+    res.json({ message: "Email verified successfully" });
+  } catch (err) {
+    console.error("verify-otp error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.post("/resend-otp", async (req, res) => {
+  try {
+    const { emailId } = req.body;
+    if (!emailId) return res.status(400).json({ message: "emailId required" });
+
+    const user = await User.findOne({ emailId });
+    if (!user) return res.status(400).json({ message: "User not found" });
+    if (user.emailVerified) return res.status(400).json({ message: "Email already verified" });
+
+    // cooldown (e.g., 60 seconds)
+    const now = Date.now();
+    if (user.lastOtpSentAt && now - new Date(user.lastOtpSentAt).getTime() < 60 * 1000) {
+      return res.status(429).json({ message: "Please wait before requesting a new OTP" });
+    }
+
+    const otp = generateOTP();
+    user.otpHash = await bcrypt.hash(otp, 10);
+    user.otpExpires = Date.now() + 5 * 60 * 1000;
+    user.lastOtpSentAt = Date.now();
+    await user.save();
+
+    await sendOtpEmail(emailId, otp);
+    res.json({ message: "OTP resent" });
+  } catch (err) {
+    console.error("resend-otp error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 app.post("/login", async (req, res) => {
   const { userName, password } = req.body;
@@ -111,16 +193,16 @@ app.post("/login", async (req, res) => {
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
-  const NexTalktoken = jwt.sign({ userId: user._id }, "secret", {
-    expiresIn: "7d",
-  });
+  if (!user.emailVerified) {
+    return res.status(403).json({ message: "Please verify your email before logging in" });
+  }
 
-  // Convert to plain object and remove password
+  const NexTalktoken = jwt.sign({ userId: user._id }, "secret", { expiresIn: "7d" });
   const userInfo = user.toObject();
   delete userInfo.password;
-
   res.json({ NexTalktoken, user: userInfo });
 });
+
 
 app.post("/admin/login", async (req, res) => {
   const { userName, password } = req.body;

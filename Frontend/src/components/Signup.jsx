@@ -15,7 +15,6 @@ const Signup = () => {
   const [isValidEmail, setIsValidEmail] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  
 
   const notify = () => toast("You are successfully registered!");
   const notifyUserExist = () => toast(addError);
@@ -137,7 +136,10 @@ const Signup = () => {
       setMobileNumber("");
       setUserName("");
       notify();
-      navigate("/login", { state: { userName: userName, password: password } });
+      // after successful signup
+      navigate("/verify-otp", {
+        state: { emailId: emailId, userName, password },
+      });
     } catch (err) {
       setAddError("Failed to add contact");
     }
@@ -292,7 +294,7 @@ const Signup = () => {
 
             {/* Show Password portion */}
             <div
-              class={`flex items-center ${
+              className={`flex items-center ${
                 password ? "visible  my-1" : "invisible"
               }`}
             >
