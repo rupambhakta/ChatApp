@@ -14,6 +14,8 @@ const Signup = () => {
   const [addError, setAddError] = useState("");
   const [isValidEmail, setIsValidEmail] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const notify = () => toast("You are successfully registered!");
@@ -100,6 +102,7 @@ const Signup = () => {
   const handleAddNewUser = async (e) => {
     e.preventDefault();
     setAddError("");
+
     if (!userName || !emailId || !mobileNumber || !password) {
       setAddError("All fields are required");
       return;
@@ -108,6 +111,9 @@ const Signup = () => {
       setAddError("Please enter a valid Indian mobile number.");
       return;
     }
+
+    setLoading(true); // ⬅️ start loading here
+
     try {
       const res = await fetch(`${apiUrl}/signup`, {
         method: "POST",
@@ -119,29 +125,33 @@ const Signup = () => {
           password: password || "",
         }),
       });
+
       if (!res.ok) {
         const err = await res.json();
         if (res.status === 409 && err.exists) {
           setAddError("User already present with this email or mobile number");
-          console.log(addError);
-
           notifyUserExist();
         } else {
           setAddError(err.error || "Failed to add contact");
         }
+        setLoading(false); // ⬅️ stop loading on error
         return;
       }
+
       setEmailId("");
       setPassword("");
       setMobileNumber("");
       setUserName("");
       notify();
-      // after successful signup
+
+      setLoading(false); // ⬅️ stop loading before navigation
+
       navigate("/verify-otp", {
         state: { emailId: emailId, userName, password },
       });
     } catch (err) {
       setAddError("Failed to add contact");
+      setLoading(false); // ⬅️ stop loading on network error
     }
   };
 
@@ -316,9 +326,14 @@ const Signup = () => {
             {/* Button for sumbut the form*/}
             <button
               type="submit"
-              className="px-4 py-4 bg-orange-500 hover:bg-oragne-600 text-black rounded w-full transition-colors duration- cursor-pointer"
+              disabled={loading}
+              className={`px-4 py-4 rounded w-full transition-colors duration-200 cursor-pointer ${
+                loading
+                  ? "bg-gray-500 text-white"
+                  : "bg-orange-500 hover:bg-orange-600 text-black"
+              }`}
             >
-              Submit
+              {loading ? "Signing up..." : "Submit"}
             </button>
           </form>
           <div className="mt-4 text-center text-gray-100 text-sm sm:text-base">

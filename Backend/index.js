@@ -16,8 +16,8 @@ const MONGO = process.env.MONGO_URI;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-app.use(express.json({ limit: '7mb' }));
-app.use(express.urlencoded({ extended: true, limit: '7mb' }));
+app.use(express.json({ limit: "7mb" }));
+app.use(express.urlencoded({ extended: true, limit: "7mb" }));
 app.use(
   cors({
     origin: [frontEndUrl],
@@ -51,7 +51,6 @@ async function sendOtpEmail(to, otp) {
     text: `Your verification code is ${otp}. It will expire in 5 minutes.`,
   });
 }
-
 
 // JWT verification middleware
 const verifyToken = (req, res, next) => {
@@ -130,14 +129,18 @@ app.post("/signup", async (req, res) => {
 app.post("/verify-otp", async (req, res) => {
   try {
     const { emailId, otp } = req.body;
-    if (!emailId || !otp) return res.status(400).json({ message: "emailId and otp required" });
+    if (!emailId || !otp)
+      return res.status(400).json({ message: "emailId and otp required" });
 
     const user = await User.findOne({ emailId });
     if (!user) return res.status(400).json({ message: "User not found" });
-    if (user.emailVerified) return res.status(400).json({ message: "Email already verified" });
+    if (user.emailVerified)
+      return res.status(400).json({ message: "Email already verified" });
 
     if (!user.otpHash || !user.otpExpires || Date.now() > user.otpExpires) {
-      return res.status(400).json({ message: "OTP expired. Please request a new one." });
+      return res
+        .status(400)
+        .json({ message: "OTP expired. Please request a new one." });
     }
 
     const match = await bcrypt.compare(otp, user.otpHash);
@@ -163,12 +166,18 @@ app.post("/resend-otp", async (req, res) => {
 
     const user = await User.findOne({ emailId });
     if (!user) return res.status(400).json({ message: "User not found" });
-    if (user.emailVerified) return res.status(400).json({ message: "Email already verified" });
+    if (user.emailVerified)
+      return res.status(400).json({ message: "Email already verified" });
 
     // cooldown (e.g., 60 seconds)
     const now = Date.now();
-    if (user.lastOtpSentAt && now - new Date(user.lastOtpSentAt).getTime() < 60 * 1000) {
-      return res.status(429).json({ message: "Please wait before requesting a new OTP" });
+    if (
+      user.lastOtpSentAt &&
+      now - new Date(user.lastOtpSentAt).getTime() < 60 * 1000
+    ) {
+      return res
+        .status(429)
+        .json({ message: "Please wait before requesting a new OTP" });
     }
 
     const otp = generateOTP();
@@ -185,8 +194,6 @@ app.post("/resend-otp", async (req, res) => {
   }
 });
 
-
-
 app.post("/login", async (req, res) => {
   const { userName, password } = req.body;
   const user = await User.findOne({ userName });
@@ -194,15 +201,18 @@ app.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
   if (!user.emailVerified) {
-    return res.status(403).json({ message: "Please verify your email before logging in" });
+    return res
+      .status(403)
+      .json({ message: "Please verify your email before logging in" });
   }
 
-  const NexTalktoken = jwt.sign({ userId: user._id }, "secret", { expiresIn: "7d" });
+  const NexTalktoken = jwt.sign({ userId: user._id }, "secret", {
+    expiresIn: "7d",
+  });
   const userInfo = user.toObject();
   delete userInfo.password;
   res.json({ NexTalktoken, user: userInfo });
 });
-
 
 app.post("/admin/login", async (req, res) => {
   const { userName, password } = req.body;
@@ -286,18 +296,21 @@ app.put("/user", verifyToken, async (req, res) => {
     }
 
     // Validate base64 image size (5MB)
-    const base64Size = Buffer.from(image.split(',')[1], 'base64').length;
-    if (base64Size > 5 * 1024 * 1024) { // 5MB limit
-      return res.status(413).json({ message: "Image size must be less than 5MB" });
+    const base64Size = Buffer.from(image.split(",")[1], "base64").length;
+    if (base64Size > 5 * 1024 * 1024) {
+      // 5MB limit
+      return res
+        .status(413)
+        .json({ message: "Image size must be less than 5MB" });
     }
 
     // Upload to Cloudinary with optimization
     const uploadResponse = await cloudinary.uploader.upload(image, {
-      folder: 'profile_images',
+      folder: "profile_images",
       transformation: [
-        { width: 800, height: 800, crop: 'limit' },
-        { quality: 'auto' }
-      ]
+        { width: 800, height: 800, crop: "limit" },
+        { quality: "auto" },
+      ],
     });
 
     // Update user with the image URL
@@ -305,7 +318,7 @@ app.put("/user", verifyToken, async (req, res) => {
       userId,
       { profileImage: uploadResponse.secure_url },
       { new: true }
-    ).select('-password');
+    ).select("-password");
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
@@ -314,15 +327,14 @@ app.put("/user", verifyToken, async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile image updated successfully",
-      user: updatedUser
+      user: updatedUser,
     });
-
   } catch (error) {
     console.error("Error in update profile:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Error uploading image",
-      error: error.message 
+      error: error.message,
     });
   }
 });
@@ -389,21 +401,21 @@ app.get("/api/last-messages", verifyToken, async (req, res) => {
                 {
                   $and: [
                     { $eq: ["$receiverId", new mongoose.Types.ObjectId(myId)] },
-                    { $eq: ["$visited", false] }
-                  ]
+                    { $eq: ["$visited", false] },
+                  ],
                 },
                 1,
-                0
-              ]
-            }
-          }
+                0,
+              ],
+            },
+          },
         },
       },
       {
-        $replaceRoot: { 
-          newRoot: { 
-            $mergeObjects: ["$lastMessage", { unreadCount: "$unreadCount" }] 
-          } 
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: ["$lastMessage", { unreadCount: "$unreadCount" }],
+          },
         },
       },
     ]);
@@ -422,19 +434,19 @@ app.put("/api/mark-visited/:userId", verifyToken, async (req, res) => {
 
     // Update ALL unvisited messages from the selected user to the current user
     const result = await Message.updateMany(
-      { 
-        senderId: selectedUserId, 
-        receiverId: myId, 
-        visited: false 
+      {
+        senderId: selectedUserId,
+        receiverId: myId,
+        visited: false,
       },
-      { 
-        $set: { visited: true } 
+      {
+        $set: { visited: true },
       }
     );
 
-    res.status(200).json({ 
+    res.status(200).json({
       message: "Messages marked as visited",
-      modifiedCount: result.modifiedCount
+      modifiedCount: result.modifiedCount,
     });
   } catch (error) {
     console.error("Error marking messages as visited:", error);
