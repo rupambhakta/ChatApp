@@ -86,12 +86,29 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Check if either email or mobile number already exists
-    const existing = await User.findOne({ $or: [{ emailId }, { mobileNumber }] });
-    if (existing) {
+    // Check if user exists and handle verification status
+    const existingEmail = await User.findOne({ emailId });
+    const existingMobile = await User.findOne({ mobileNumber });
+    
+    if (existingEmail) {
+      // If user exists but email is not verified, allow them to try again
+      if (!existingEmail.emailVerified) {
+        // Delete the old unverified account
+        await User.deleteOne({ _id: existingEmail._id });
+      } else {
+        // If email is verified, prevent signup
+        return res.status(409).json({
+          exists: true,
+          message: "An account with this email already exists",
+        });
+      }
+    }
+
+    // Check for existing mobile number separately
+    if (existingMobile && existingMobile.emailId !== emailId) {
       return res.status(409).json({
         exists: true,
-        message: "User already exists with this email or mobile number",
+        message: "An account with this mobile number already exists",
       });
     }
 
